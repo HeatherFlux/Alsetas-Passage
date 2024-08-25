@@ -1,0 +1,30 @@
+/* Toast container */
+#alseta-toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+/* Toast message */
+.alseta-toast {
+    display: flex;
+    align-items: center;
+    background-color: #b10000;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.alseta-toast.show {
+    opacity: 1;
+}
+
+.alseta-toast .close-btn {
+    margin-left: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}

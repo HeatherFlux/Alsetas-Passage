@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Pathbuilder Discord Bot</title>
+    <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+
+<body>
+    <h1>Pathbuilder Discord Bot</h1>
+    <p><a href="https://discord.gg/jWEEqX8qkc">Bug Reports</a></p>
+    <label for="webhookName">Discord Channel Name:</label>
+    <input type="text" id="webhookName" placeholder="e.g., My Discord Channel" />
+    <label for="webhookUrl">Webhook URL:</label>
+    <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." />
+    <button id="addWebhook" disabled>Add Webhook</button>
+    <p id="addSuccess" class="success-message">Webhook added successfully!</p>
+
+    <h2>Saved Webhooks</h2>
+    <ul id="webhookList"></ul>
+
+    <h2>Select Active Webhook</h2>
+    <select id="activeWebhook"></select>
+    <button id="saveActiveWebhook">Save Active Webhook</button>
+    <p id="saveSuccess" class="success-message">Active Webhook saved successfully!</p>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

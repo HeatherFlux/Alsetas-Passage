@@ -1,0 +1,125 @@
+body {
+    background-color: #f5eadfca;
+    background-size: cover;
+}
+h1,
+h2 {
+    color: #6b4a2f;
+    text-shadow: 2px 2px 2px #fff;
+    font-family: "Goudy Old Style", "Book Antiqua", Palatino, serif;
+    margin-bottom: 15px;
+}
+
+h1 {
+    font-size: 22px;
+    border-bottom: 3px solid #6b4a2f;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+h2 {
+    font-size: 20px;
+    border-bottom: 2px solid #6b4a2f;
+    padding-bottom: 3px;
+    margin-bottom: 10px;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #6b4a2f;
+}
+
+input[type="text"] {
+    width: 90%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border: 2px solid #6b4a2f;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
+    font-family: "Goudy Old Style", "Book Antiqua", Palatino, serif;
+}
+
+button {
+    background-color: #6b4a2f;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: "Goudy Old Style", "Book Antiqua", Palatino, serif;
+    margin-top: 10px;
+}
+
+button:disabled {
+    background-color: #a57d5a;
+    cursor: not-allowed;
+}
+
+button:hover:enabled {
+    background-color: #4b2d1a;
+}
+
+ul {
+    width: 90%;
+    padding: 10px;
+    border: 2px solid #6b4a2f;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+    list-style-type: none;
+    padding-left: 0;
+    font-family: "Goudy Old Style", "Book Antiqua", Palatino, serif;
+}
+
+ul li {
+    margin-bottom: 5px;
+    width: 97%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #6b4a2f;
+    padding: 5px 10px;
+}
+
+ul li:last-child {
+    border-bottom: none;
+}
+
+ul li button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 12px;
+}
+
+ul li button:hover {
+    background-color: #c0392b;
+}
+
+select {
+    width: 90%;
+    padding: 10px;
+    border: 2px solid #6b4a2f;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+    font-family: "Goudy Old Style", "Book Antiqua", Palatino, serif;
+}
+
+.success-message {
+    color: green;
+    margin-top: 10px;
+    font-family: "Goudy Old Style", "Book Antiqua", Palatino, serif;
+    display: none; /* Ensures it is initially hidden */
+}

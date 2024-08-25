@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Alseta's Passage: A Pathbuilder Discord Bot",
+  "version": "1.1.0",
+  "description": "Creates a safe passageway for your rolls from pathbuilder to discord",
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Discord Integration",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png",
+      "512": "icons/icon512.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png",
+    "512": "icons/icon512.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://pathbuilder2e.com/*"],
+      "css": ["toast.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
