@@ -1,3 +1,4 @@
+const log = console.log;
 console.log = function(){     
   var args = Array.from(arguments); // ES5
   args.unshift('Alseta\'s Passage Log:' + ": ");
@@ -5,14 +6,18 @@ console.log = function(){
 }
 
 // Ensure toast.js and toast.css are included
-const css = document.createElement("link");
-css.href = browser.runtime.getURL("toast.css");
-css.rel = "stylesheet";
-document.head.appendChild(css);
+function injectResources() {
+  // Inject CSS for toast notifications
+  const css = document.createElement("link");
+  css.href = browser.runtime.getURL("toast.css");
+  css.rel = "stylesheet";
+  document.head.appendChild(css);
 
-const script = document.createElement("script");
-script.src = browser.runtime.getURL("toast.js");
-document.head.appendChild(script);
+  // Inject JavaScript for toast notifications
+  const script = document.createElement("script");
+  script.src = browser.runtime.getURL("toast.js");
+  document.head.appendChild(script);
+}
 
 // Function to show toast notification
 function showToast(message, duration = 3000) {
@@ -590,14 +595,53 @@ function observeSidebar() {
   }
 }
 
+// // Initialize the script
+// function init() {
+//   observeDiceHistory();
+//   observeSidebar(); // Add sidebar observation
+//   observePageForStatblock(); // Ensure statblock is observed when dynamically added
+// }
+
+// // Run init on page load
+// window.addEventListener("load", init);
 
 
-// Initialize the script
-function init() {
+// Improved initialization using webNavigation API and MutationObserver
+function initializeExtension() {
+  // This function will set up everything needed, similar to your init() function.
+  console.log('Inject Resources')
+  injectResources();
+  console.log('Inject Resources done')
+  console.log("Start Dice History Listener");
   observeDiceHistory();
-  observeSidebar(); // Add sidebar observation
-  observePageForStatblock(); // Ensure statblock is observed when dynamically added
+  console.log("Dice History Listener Started");
+  console.log("Start Sidebar Listener");
+  observeSidebar();
+  console.log("Sidebar Listener Started");
+  console.log("Start Statblock Listener");
+  observePageForStatblock(); 
+  console.log("Statblock Listener Started");
 }
 
-// Run init on page load
-window.addEventListener("load", init);
+function observeForNewContent() {
+  const observer = new MutationObserver(() => {
+    console.log("DOM mutation detected, initializing extension.");
+    initializeExtension();
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function setupWebNavigationListener() {
+  browser.webNavigation.onCompleted.addListener((details) => {
+    if (details.frameId === 0) {
+      console.log("WebNavigation completed, re-initializing extension.");
+      initializeExtension();
+    }
+  }, { url: [{ hostContains: 'pathbuilder' }] });
+}
+
+// Run the initial setup
+initializeExtension();
+observeForNewContent();
+setupWebNavigationListener();
