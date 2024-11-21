@@ -1,18 +1,23 @@
-console.log = function(){     
+const log = console.log;
+console.log = function () {
   var args = Array.from(arguments); // ES5
   args.unshift('Alseta\'s Passage Log:' + ": ");
   log.apply(console, args);
 }
 
 // Ensure toast.js and toast.css are included
-const css = document.createElement("link");
-css.href = browser.runtime.getURL("toast.css");
-css.rel = "stylesheet";
-document.head.appendChild(css);
+function injectResources() {
+  // Inject CSS for toast notifications
+  const css = document.createElement("link");
+  css.href = browser.runtime.getURL("toast.css");
+  css.rel = "stylesheet";
+  document.head.appendChild(css);
 
-const script = document.createElement("script");
-script.src = browser.runtime.getURL("toast.js");
-document.head.appendChild(script);
+  // Inject JavaScript for toast notifications
+  const script = document.createElement("script");
+  script.src = browser.runtime.getURL("toast.js");
+  document.head.appendChild(script);
+}
 
 // Function to show toast notification
 function showToast(message, duration = 3000) {
@@ -129,7 +134,7 @@ function prepareMessage(title, traits, contentMarkdown) {
 
 // Function to handle button click event
 function handleButtonClick(event, div) {
-//   console.log("Button Clicked:", div);
+  //   console.log("Button Clicked:", div);
   event.stopPropagation(); // Prevent the click from propagating to parent divs
 
   let detailDiv = div.querySelector(".listview-detail");
@@ -144,11 +149,11 @@ function handleButtonClick(event, div) {
   // Get the title
   const titleDiv = div.querySelector(".listview-title");
   const title = titleDiv ? titleDiv.innerText : "";
-//   console.log("Title:", title);
+  //   console.log("Title:", title);
 
   // Extract and format traits
   const { traits, traitDivs } = extractAndFormatTraits(detailDiv);
-//   console.log("Traits:", traits);
+  //   console.log("Traits:", traits);
 
   // Get the remaining content without the button and traits
   let contentHtml = detailDiv.innerHTML;
@@ -161,7 +166,7 @@ function handleButtonClick(event, div) {
   const contentMarkdown = convertHtmlToMarkdown(contentHtml);
   const message = prepareMessage(title, traits, contentMarkdown);
 
-//   console.log("Detail export button clicked for:", detailDiv);
+  //   console.log("Detail export button clicked for:", detailDiv);
   // console.log("Message to send:", message);
 
   // Send message to background script to send to Discord
@@ -172,7 +177,7 @@ function handleButtonClick(event, div) {
     })
     .then((response) => {
       if (response && response.status === "ok") {
-      //   console.log("Message sent to background script");
+        //   console.log("Message sent to background script");
         // No action needed on success
       } else {
         showToast("Error going to Discord");
@@ -203,14 +208,14 @@ function addDetailExportButton(div) {
   if (detailDiv) {
     let button = detailDiv.querySelector(".discord-export-button");
     if (button && hasEventListener(button, "click")) {
-    //   console.log("Button with event listener already exists for", detailDiv);
+      //   console.log("Button with event listener already exists for", detailDiv);
       return;
     }
 
     if (!button) {
       button = createExportButton();
       detailDiv.insertBefore(button, detailDiv.firstChild);
-    //   console.log("Created and added button to", detailDiv);
+      //   console.log("Created and added button to", detailDiv);
     }
 
     if (!hasEventListener(button, "click")) {
@@ -224,7 +229,7 @@ function addDetailExportButton(div) {
       }
       eventListenerRegistry.get(button).push("click");
 
-    //   console.log("Attached event listener to button for", detailDiv);
+      //   console.log("Attached event listener to button for", detailDiv);
     }
   }
 }
@@ -268,7 +273,7 @@ const observer = new MutationObserver((mutations) => {
                 detailDiv = detailDiv.nextElementSibling;
               }
               if (detailDiv && !detailDiv.classList.contains("hidden")) {
-              //   console.log("Detail content If:", detailDiv.innerHTML);
+                //   console.log("Detail content If:", detailDiv.innerHTML);
               }
             }, 500); // Adjust the timeout as needed
           });
@@ -285,7 +290,7 @@ const observer = new MutationObserver((mutations) => {
                     detailDiv = detailDiv.nextElementSibling;
                   }
                   if (detailDiv && !detailDiv.classList.contains("hidden")) {
-                  //   console.log("Detail content Else:", detailDiv.innerHTML);
+                    //   console.log("Detail content Else:", detailDiv.innerHTML);
                   }
                 }, 500); // Adjust the timeout as needed
               });
@@ -301,7 +306,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Initial call to add buttons to already existing items
 document.addEventListener("DOMContentLoaded", () => {
-//   console.log("DOM fully loaded and parsed");
+  //   console.log("DOM fully loaded and parsed");
   handleDynamicContent();
 });
 
@@ -345,10 +350,10 @@ function logDiceHistory() {
 
     const latestHistory = diceHistoryDiv.firstElementChild;
     if (!latestHistory) {
-    //   console.log("No dice history found");
+      //   console.log("No dice history found");
       throw new Error('No History Found');
     }
-  //   console.log(`Dice history: ${latestHistory.innerHTML}`);
+    //   console.log(`Dice history: ${latestHistory.innerHTML}`);
     const diceTitle = fetchDiceTitle();
     if (isBetaPage()) {
       browser.runtime.sendMessage({
@@ -384,7 +389,7 @@ function logDiceHistory() {
 
 // Function to format listview details
 function formatListViewDetails(details) {
-//   console.log(details);
+  //   console.log(details);
   let formattedDetails = details.replace(/\n+/g, "\n> ").trim();
   return formattedDetails;
 }
@@ -513,28 +518,28 @@ function extractCharacterData(htmlContent) {
 
 
 function observeStatblock() {
-//   console.log("Stat");
+  //   console.log("Stat");
 
   const statblock = document.querySelector(".div-statblock");
   if (statblock) {
-  //   console.log("Statblock found");
+    //   console.log("Statblock found");
 
     const observer = new MutationObserver((mutationsList) => {
       for (let mutation of mutationsList) {
         if (mutation.type === 'childList' || mutation.type === 'subtree') {
-        //   console.log("Statblock updated");
+          //   console.log("Statblock updated");
           let stats = undefined;
           let diceTitle = undefined; // Declare diceTitle
 
           if (isBetaPage()) {
-          //   console.log("Getting stats for beta page");
+            //   console.log("Getting stats for beta page");
             const htmlContent = statblock.innerHTML;
             stats = extractCharacterData(htmlContent);
-          //   console.log(stats);
+            //   console.log(stats);
             characterName = stats.name; // Set characterName from stats
             diceTitle = fetchDiceTitle();
           } else {
-          //   console.log("Not a beta page");
+            //   console.log("Not a beta page");
           }
         }
       }
@@ -544,7 +549,7 @@ function observeStatblock() {
     observer.observe(statblock, { childList: true, subtree: true });
 
   } else {
-  //   console.log("Stat block not found");
+    //   console.log("Stat block not found");
   }
 }
 
@@ -552,7 +557,7 @@ function observePageForStatblock() {
   const observer = new MutationObserver(() => {
     const statblock = document.querySelector(".div-statblock");
     if (statblock) {
-    //   console.log("Statblock found during page observation");
+      //   console.log("Statblock found during page observation");
       observeStatblock();
       observer.disconnect(); // Stop observing once the statblock is found and observed
     }
@@ -571,7 +576,7 @@ function observeDiceHistory() {
 
     observer.observe(diceHistoryDiv, { childList: true });
   } else {
-  //   console.log("Dice history div not found");
+    //   console.log("Dice history div not found");
   }
 }
 
@@ -582,22 +587,61 @@ function observeSidebar() {
     const observer = new MutationObserver(() => {
       diceTitle = fetchDiceTitle();
       characterName = fetchCharacterName()
-    //   console.log(`Dice title updated: ${diceTitle}`);
+      //   console.log(`Dice title updated: ${diceTitle}`);
     });
     observer.observe(sidebar, { childList: true, subtree: true });
   } else {
-  //   console.log("Sidebar not found");
+    //   console.log("Sidebar not found");
   }
 }
 
+// // Initialize the script
+// function init() {
+//   observeDiceHistory();
+//   observeSidebar(); // Add sidebar observation
+//   observePageForStatblock(); // Ensure statblock is observed when dynamically added
+// }
+
+// // Run init on page load
+// window.addEventListener("load", init);
 
 
-// Initialize the script
-function init() {
+// Improved initialization using webNavigation API and MutationObserver
+function initializeExtension() {
+  // This function will set up everything needed, similar to your init() function.
+  console.log('Inject Resources')
+  injectResources();
+  console.log('Inject Resources done')
+  console.log("Start Dice History Listener");
   observeDiceHistory();
-  observeSidebar(); // Add sidebar observation
-  observePageForStatblock(); // Ensure statblock is observed when dynamically added
+  console.log("Dice History Listener Started");
+  console.log("Start Sidebar Listener");
+  observeSidebar();
+  console.log("Sidebar Listener Started");
+  console.log("Start Statblock Listener");
+  observePageForStatblock();
+  console.log("Statblock Listener Started");
 }
 
-// Run init on page load
-window.addEventListener("load", init);
+function observeForNewContent() {
+  const observer = new MutationObserver(() => {
+    console.log("DOM mutation detected, initializing extension.");
+    initializeExtension();
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function setupWebNavigationListener() {
+  browser.webNavigation.onCompleted.addListener((details) => {
+    if (details.frameId === 0) {
+      console.log("WebNavigation completed, re-initializing extension.");
+      initializeExtension();
+    }
+  }, { url: [{ hostContains: 'pathbuilder' }] });
+}
+
+// Run the initial setup
+initializeExtension();
+observeForNewContent();
+setupWebNavigationListener();
