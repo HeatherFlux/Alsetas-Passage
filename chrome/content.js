@@ -1,5 +1,3 @@
-// content.js
-
 const browser = chrome;
 
 // Enhanced Console Logging

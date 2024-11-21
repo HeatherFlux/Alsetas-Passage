@@ -1,5 +1,3 @@
-// background.js
-
 // Utility Functions
 const utils = {
   async getStorageData(keys) {
