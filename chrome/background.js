@@ -19,7 +19,8 @@ const utils = {
     history = this.stripHTML(history);
     const match = history.split(" ");
 
-    if (match.length === 0) return this.stripHTML(history);
+    // This may be poitless it is here if history is not a sentance
+    if (match.length === 1) return history
 
     const rollType = match[0];
     const rollValue = match[2] || "";
