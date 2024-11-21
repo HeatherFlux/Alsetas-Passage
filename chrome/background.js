@@ -1,63 +1,51 @@
-// Utility functions
-async function getStorageData(keys) {
-  try {
-    return await chrome.storage.sync.get(keys);
-  } catch (error) {
-    console.error("Error getting storage data:", error);
-    throw error;
-  }
-}
+// background.js
 
-function stripHTML(html) {
-  return html.replace(/<\/?[^>]+(>|$)/g, " ");
-}
+// Utility Functions
+const utils = {
+  async getStorageData(keys) {
+    try {
+      return await chrome.storage.sync.get(keys);
+    } catch (error) {
+      console.error("Error getting storage data:", error);
+      throw error;
+    }
+  },
+  stripHTML(html) {
+    return html.replace(/<\/?[^>]+(>|$)/g, " ");
+  },
+  removePrefix(history) {
+    return history.replace(/\d{1,2}:\d{2}:\d{2} (AM|PM) Your /, '');
+  },
+  parseDiceHistory(history, title, characterName) {
+    history = this.removePrefix(history);
+    history = this.stripHTML(history);
+    const match = history.split(" ");
 
-function removePrefix(history) {
-  return history.replace(/\d{1,2}:\d{2}:\d{2} (AM|PM) Your /, ``);
-}
+    if (match.length === 0) return this.stripHTML(history);
 
-function parseDiceHistory(history, title) {
-  history = removePrefix(history);
-  history = stripHTML(history);
-  const match = history.split(" ");
-
-  if (match) {
     const rollType = match[0];
-    const rollValue = match[2];
+    const rollValue = match[2] || "";
 
-    console.log(match)
     switch (rollType) {
       case 'Critical':
         return `Critical Hit! **${characterName}'s** ${title} caused **${rollValue}** damage.`;
-        break;
       case 'Attack':
         return `**${characterName}'s** ${title} attempts to hit with a **${rollValue}**.`;
-        break;
       case 'Damage':
         return `**${characterName}'s** ${title} caused **${rollValue}** damage.`;
-        break;
       case 'Free':
-        return `**${characterName}** rolls ${match[2]} with a ${match[4]}`
-        break;
+        return `**${characterName}** rolls ${match[2] || ''} with a ${match[4] || ''}`;
       default:
-        return `**${characterName}** rolls ${title} for **${match[1]}**.`;
-        break;
+        return `**${characterName}** rolls ${title} for **${match[1] || ''}**.`;
     }
   }
+};
 
-  return `${stripHTML(history)}`;
-}
-
+// Send Message to Discord via Webhook
 async function sendToDiscord(message) {
   try {
-    const result = await getStorageData(["webhooks", "activeWebhook"]);
-    const webhooks = result.webhooks || [];
-    const activeWebhookName = result.activeWebhook;
-    const webhook = webhooks.find((w) => w.name === activeWebhookName);
-
-    console.log("Webhooks:", webhooks);
-    console.log("Active Webhook Name:", activeWebhookName);
-    console.log("Found Webhook:", webhook);
+    const { webhooks = [], activeWebhook } = await utils.getStorageData(["webhooks", "activeWebhook"]);
+    const webhook = webhooks.find(w => w.name === activeWebhook);
 
     if (!webhook) {
       console.error("Active webhook not found");
@@ -67,9 +55,7 @@ async function sendToDiscord(message) {
     console.log("Sending message to webhook:", webhook.url);
     const response = await fetch(webhook.url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         avatar_url: "https://i.imgur.com/xi6Qssm.png",
         content: message,
@@ -89,19 +75,22 @@ async function sendToDiscord(message) {
   }
 }
 
+// Handle Sending to Discord
 async function handleSendToDiscord(request, sendResponse) {
   try {
     const result = await sendToDiscord(request.message);
-    console.log(result);
     sendResponse({ status: result === "Message sent" ? "ok" : "error" });
   } catch (error) {
     sendResponse({ status: "error", message: error.message });
   }
 }
 
+// Handle Logging Dice History
 async function handleLogDiceHistory(request, sendResponse) {
-  characterName = request.data;
-  const formattedMessage = parseDiceHistory(request.data, request.title);
+  const { data, title } = request;
+  const characterName = request.data || "Unknown Character";
+  const formattedMessage = utils.parseDiceHistory(data, title, characterName);
+
   try {
     const result = await sendToDiscord(formattedMessage);
     sendResponse({ status: result === "Message sent" ? "ok" : "error" });
@@ -110,9 +99,12 @@ async function handleLogDiceHistory(request, sendResponse) {
   }
 }
 
+// Handle Logging Character Name with History
 async function handleLogCharacterName(request, sendResponse) {
-  characterName = request.data;
-  const formattedMessage = parseDiceHistory(request.history, request.title);
+  const { data, history, title } = request;
+  const characterName = data || "Unknown Character";
+  const formattedMessage = utils.parseDiceHistory(history, title, characterName);
+
   try {
     const result = await sendToDiscord(formattedMessage);
     sendResponse({ status: result === "Message sent" ? "ok" : "error" });
@@ -121,19 +113,21 @@ async function handleLogCharacterName(request, sendResponse) {
   }
 }
 
+// Message Listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.action) {
+    case "sendToDiscord":
+      handleSendToDiscord(request, sendResponse);
+      break;
     case "logDiceHistory":
       handleLogDiceHistory(request, sendResponse);
       break;
     case "logCharacterName":
       handleLogCharacterName(request, sendResponse);
       break;
-    case "sendToDiscord":
-      handleSendToDiscord(request, sendResponse);
-      break;
     default:
       console.error("Unknown action:", request.action);
+      sendResponse({ status: "error", message: "Unknown action" });
       break;
   }
   return true; // Keep the message channel open for async response
