@@ -1,6 +1,6 @@
 # Alseta's Passage: A Pathbuilder Discord Bot
 
-A Chrome/Firefox extension that creates a seamless integration between Pathbuilder2e and Discord, allowing players to easily share their character actions, rolls, and information in Discord channels.
+A browser extension that creates a seamless integration between Pathbuilder2e and Discord, allowing players to easily share their character actions, rolls, and information in Discord channels.
 
 ## Features
 
@@ -15,36 +15,37 @@ A Chrome/Firefox extension that creates a seamless integration between Pathbuild
 
 ```
 .
-├── chrome/                 # Chrome extension implementation
-│   ├── manifest.json      # Extension manifest
-│   ├── background.js      # Background service worker
-│   ├── content.js         # Content script
-│   ├── popup.html        # Extension popup interface
-│   ├── popup.css         # Popup styles
-│   ├── toast.css         # Toast notification styles
-│   ├── build.sh          # Build script
-│   ├── icons/            # Extension icons
-│   └── src/              # Source code
-│       ├── utils/        # Utility functions
-│       │   ├── htmlUtils.js    # HTML manipulation utilities
-│       │   ├── discordUtils.js # Discord message formatting
-│       │   └── uiUtils.js      # UI components and notifications
-│       └── modules/      # Feature modules
-│           ├── characterManager.js # Character data management
-│           ├── discordManager.js   # Discord communication
-│           └── pageObserver.js     # Dynamic content handling
-├── firefox/              # Firefox extension implementation
-└── README.md            # This file
-
+├── build.sh              # Main build script for all extensions
+├── chrome/              # Chrome extension implementation
+│   ├── manifest.json    # Extension manifest
+│   ├── background.js    # Background service worker
+│   ├── content.js       # Content script
+│   ├── build.sh        # Chrome-specific build script
+│   └── src/            # Source code
+│       ├── utils/      # Utility functions
+│       └── modules/    # Feature modules
+├── firefox/            # Firefox extension implementation
+│   ├── manifest.json   # Extension manifest
+│   ├── background.js   # Background script
+│   ├── content.js      # Content script
+│   ├── build.sh       # Firefox-specific build script
+│   └── src/           # Source code
+│       ├── utils/     # Utility functions
+│       └── modules/   # Feature modules
+└── test/              # Test suite
+    ├── fixtures/      # Test HTML fixtures
+    ├── unit/         # Unit tests
+    └── integration/  # Integration tests
 ```
 
 ## Development
 
 ### Prerequisites
 
-- Chrome browser for testing
+- Node.js and npm for testing
+- Chrome and Firefox browsers for development
 - Discord webhook URL(s) for testing
-- Access to pathbuilder2e.com
+- `zip` command-line utility for building packages
 
 ### Local Development
 
@@ -56,110 +57,87 @@ cd alsetas-passage
 
 2. Load the extension in Chrome:
 - Open Chrome and navigate to `chrome://extensions/`
-- Enable "Developer mode" in the top right
+- Enable "Developer mode"
 - Click "Load unpacked" and select the `chrome` directory
 
-3. Test the extension:
-- Visit pathbuilder2e.com
-- Open the extension popup and add your Discord webhook
-- Try the "Send to Discord" buttons on various elements
+3. Load the extension in Firefox:
+- Open Firefox and navigate to `about:debugging`
+- Click "This Firefox"
+- Click "Load Temporary Add-on" and select any file in the `firefox` directory
 
-### Code Organization
+### Building Extensions
 
-The extension uses a modular architecture with ES modules:
+To build both Chrome and Firefox extensions:
 
-#### Utils
-- **htmlUtils.js**: HTML manipulation and sanitization functions
-- **discordUtils.js**: Discord message formatting and webhook handling
-- **uiUtils.js**: UI components and toast notifications
-
-#### Modules
-- **characterManager.js**: Manages character data extraction and tracking
-- **discordManager.js**: Handles Discord webhook communication
-- **pageObserver.js**: Manages dynamic content and page observations
-
-#### Main Files
-- **content.js**: Main content script that initializes the extension
-- **background.js**: Background service worker for webhook handling
-- **popup.html/css**: Extension popup interface
-
-### Making Changes
-
-1. Edit the relevant files in the `src` directory
-2. Test changes locally using the loaded unpacked extension
-3. Use the browser's developer tools to debug:
-   - Content script console logs are visible in the page's console
-   - Background script logs are visible in the extension's developer tools
-
-## Building for Release
-
-### Build Process
-
-The extension uses a simple build script that maintains code transparency for the Chrome Web Store review process.
-
-1. Navigate to the chrome directory:
-```bash
-cd chrome
-```
-
-2. Run the build script:
 ```bash
 ./build.sh
 ```
 
-The script will:
-- Create a clean build directory
-- Copy all required files
-- Create a versioned zip file (e.g., alsetas-passage-v1.1.0.zip)
-- Clean up temporary files
+This will:
+- Clean previous builds
+- Build Chrome extension (.zip)
+- Build Firefox extension (.xpi)
+- Place built packages in the root directory
 
-### Chrome Web Store Submission
+To build individual extensions:
 
-1. Build the extension as described above
-2. Visit the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
-3. Upload the generated zip file
-4. Fill in store listing information
-5. Submit for review
+```bash
+# For Chrome
+cd chrome
+./build.sh
 
-## Code Overview
+# For Firefox
+cd firefox
+./build.sh
+```
 
-### Content Script Flow
+### Testing
 
-1. **Initialization**:
-   - Injects required CSS assets
-   - Sets up enhanced console logging
-   - Initializes page observers
+The project includes a comprehensive test suite. See [TESTING.md](TESTING.md) for detailed testing documentation and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the testing roadmap.
 
-2. **Dynamic Content Handling**:
-   - Observes DOM changes for new elements
-   - Adds "Send to Discord" buttons to relevant elements
-   - Manages event listeners to prevent duplicates
+To run tests:
 
-3. **Character Data Management**:
-   - Tracks character name and dice roll context
-   - Extracts character stats and information
-   - Maintains state for proper message formatting
+```bash
+# Install test dependencies
+npm install
 
-4. **Discord Integration**:
-   - Formats messages for Discord
-   - Handles webhook communication
-   - Provides feedback through toast notifications
+# Run all tests
+npm test
 
-### Message Flow
+# Run specific test suites
+npm run test:unit
+npm run test:integration
+```
 
-1. User triggers action (click or roll)
-2. Content script captures and formats data
-3. Background script receives message
-4. Discord webhook receives formatted message
-5. User gets visual feedback via toast
+## Browser Store Submissions
+
+### Chrome Web Store
+
+1. Build the extension:
+```bash
+./build.sh
+```
+
+2. Submit `alsetas-passage-v{version}.zip` to the Chrome Web Store
+
+### Firefox Add-ons
+
+1. Build the extension:
+```bash
+./build.sh
+```
+
+2. Submit `alsetas-passage-firefox-v{version}.xpi` to Firefox Add-ons
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Run tests
 5. Submit a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Version History
 
@@ -168,3 +146,10 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 ## License
 
 This project is licensed under the terms of the LICENSE file included in the repository.
+
+## Support
+
+For bug reports and feature requests, please:
+1. Check the existing issues
+2. Join our Discord server: https://discord.gg/jWEEqX8qkc
+3. Create a new issue with detailed information
