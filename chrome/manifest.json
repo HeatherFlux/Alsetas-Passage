@@ -5,8 +5,28 @@
   "description": "Creates a safe passageway for your rolls from pathbuilder to discord",
   "permissions": ["storage"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": ["https://pathbuilder2e.com/*"],
+      "css": ["toast.css"],
+      "js": ["content.js"],
+      "type": "module",
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/utils/*.js",
+        "src/modules/*.js",
+        "toast.css"
+      ],
+      "matches": ["https://pathbuilder2e.com/*"]
+    }
+  ],
   "action": {
     "default_title": "Discord Integration",
     "default_popup": "popup.html",
@@ -22,13 +42,5 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png",
     "512": "icons/icon512.png"
-  },
-  "content_scripts": [
-    {
-      "matches": ["https://pathbuilder2e.com/*"],
-      "css": ["toast.css"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }
