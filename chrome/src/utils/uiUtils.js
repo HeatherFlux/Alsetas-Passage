@@ -1,115 +1,147 @@
 /**
- * Utility functions for UI manipulation and creation
+ * UI utility functions
  */
 
+const eventListenerRegistry = new WeakMap();
+
 /**
- * Creates a toast notification container if it doesn't exist
- * @returns {HTMLElement} The toast container element
+ * Show a toast notification
+ * @param {string} message - Message to display
+ * @param {number} duration - Duration in milliseconds
  */
-function getOrCreateToastContainer() {
-    let container = document.getElementById("alseta-toast-container");
+function showToast(message, duration = 3000) {
+    let container = document.getElementById('alseta-toast-container');
     if (!container) {
-        container = document.createElement("div");
-        container.id = "alseta-toast-container";
+        container = document.createElement('div');
+        container.id = 'alseta-toast-container';
+        container.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        `;
         document.body.appendChild(container);
     }
-    return container;
+
+    const toast = document.createElement('div');
+    toast.className = 'alseta-toast';
+    toast.style.cssText = `
+        background-color: #333;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 4px;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    `;
+
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    toast.appendChild(messageSpan);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.className = 'close-btn';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: white;
+        margin-left: 10px;
+        cursor: pointer;
+        font-size: 18px;
+    `;
+    toast.appendChild(closeBtn);
+
+    container.appendChild(toast);
+
+    const removeToast = () => {
+        toast.remove();
+        if (container.children.length === 0) {
+            container.remove();
+        }
+    };
+
+    closeBtn.addEventListener('click', removeToast);
+    setTimeout(removeToast, duration);
 }
 
 /**
- * Shows a toast notification
- * @param {string} message - The message to display
- * @param {number} duration - Duration in milliseconds to show the toast
- */
-export function showToast(message, duration = 3000) {
-    const toastContainer = getOrCreateToastContainer();
-
-    const toast = document.createElement("div");
-    toast.className = "alseta-toast";
-    toast.textContent = message;
-
-    const closeButton = document.createElement("span");
-    closeButton.className = "close-btn";
-    closeButton.textContent = "×";
-    closeButton.addEventListener("click", () => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 500);
-    });
-
-    toast.appendChild(closeButton);
-    toastContainer.appendChild(toast);
-
-    // Show animation
-    setTimeout(() => toast.classList.add("show"), 10);
-
-    // Auto-hide
-    setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 500);
-    }, duration);
-}
-
-/**
- * Creates a "Send To Discord" button with proper styling
+ * Create an export button
  * @returns {HTMLButtonElement} The created button
  */
-export function createExportButton() {
-    const button = document.createElement("button");
-    button.textContent = "Send To Discord";
-    button.className = "discord-export-button";
-
-    Object.assign(button.style, {
-        fontSize: "12px",
-        marginBottom: "10px",
-        padding: "2px 5px",
-        display: "inline-block",
-        verticalAlign: "middle",
-        backgroundColor: "#4CAF50",
-        color: "white",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-        width: "auto"
-    });
-
+function createExportButton() {
+    const button = document.createElement('button');
+    button.textContent = 'Send To Discord';
+    button.className = 'discord-export-button';
+    const styles = {
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: 'none',
+        padding: '8px 16px',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        marginTop: '10px'
+    };
+    Object.assign(button.style, styles);
     return button;
 }
 
 /**
- * Injects CSS assets into the page
- * @param {string} cssPath - Path to the CSS file
+ * Check if element has event listener
+ * @param {HTMLElement} element - Element to check
+ * @param {string} eventType - Event type
+ * @returns {boolean} Whether element has listener
  */
-export function injectCSS(cssPath) {
-    const css = document.createElement("link");
-    css.href = cssPath;
-    css.rel = "stylesheet";
-    document.head.appendChild(css);
+function hasEventListener(element, eventType) {
+    const listeners = eventListenerRegistry.get(element);
+    return listeners ? listeners.has(eventType) : false;
 }
 
 /**
- * Registry to track event listeners
+ * Register event listener
+ * @param {HTMLElement} element - Element to register on
+ * @param {string} eventType - Event type
  */
-export const eventListenerRegistry = new WeakMap();
-
-/**
- * Checks if an element has a specific event listener
- * @param {HTMLElement} element - The element to check
- * @param {string} eventName - Name of the event
- * @returns {boolean} Whether the element has the event listener
- */
-export function hasEventListener(element, eventName) {
-    return eventListenerRegistry.has(element) &&
-        eventListenerRegistry.get(element).includes(eventName);
-}
-
-/**
- * Registers an event listener in the registry
- * @param {HTMLElement} element - The element to register
- * @param {string} eventName - Name of the event
- */
-export function registerEventListener(element, eventName) {
+function registerEventListener(element, eventType) {
     if (!eventListenerRegistry.has(element)) {
-        eventListenerRegistry.set(element, []);
+        eventListenerRegistry.set(element, new Set());
     }
-    eventListenerRegistry.get(element).push(eventName);
+    eventListenerRegistry.get(element).add(eventType);
 }
+
+/**
+ * Inject CSS file
+ * @param {string} cssPath - Path to CSS file
+ */
+function injectCSS(cssPath) {
+    if (!cssPath) return;
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = typeof browser !== 'undefined' && browser.runtime ?
+        browser.runtime.getURL(cssPath) :
+        new URL(cssPath, window.location.href).href;
+    document.head.appendChild(link);
+}
+
+/**
+ * Set up logging with prefix
+ */
+function setupLogging() {
+    const originalLog = console.log;
+    console.log = (...args) => {
+        originalLog("Alseta's Passage Log:", ': ', ...args);
+    };
+}
+
+module.exports = {
+    showToast,
+    createExportButton,
+    hasEventListener,
+    registerEventListener,
+    eventListenerRegistry,
+    injectCSS,
+    setupLogging
+};

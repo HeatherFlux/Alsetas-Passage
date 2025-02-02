@@ -7,7 +7,7 @@
  * @param {string} history - The history message
  * @returns {string} History without timestamp prefix
  */
-export function removePrefix(history) {
+function removePrefix(history) {
     return history.replace(/\d{1,2}:\d{2}:\d{2} (AM|PM) Your /, '');
 }
 
@@ -18,22 +18,22 @@ export function removePrefix(history) {
  * @param {string} characterName - The character's name
  * @returns {string} Formatted Discord message
  */
-export function parseDiceHistory(history, title, characterName = "Unknown Character") {
+function parseDiceHistory(history, title, characterName = "Unknown Character") {
     history = removePrefix(history);
-    const match = history.split(" ");
+    const parts = history.split(" ");
 
     // Handle single-word history
-    if (match.length === 1) return history;
+    if (parts.length === 1) return history;
 
-    const rollType = match[0];
-    const rollValue = match[2] || "";
+    const rollType = parts[0];
+    const rollValue = parts.find(part => /^\d+$/.test(part)) || "10"; // Find first numeric value
 
     const messageTemplates = {
         Critical: `Critical Hit! **${characterName}'s** ${title} caused **${rollValue}** damage.`,
         Attack: `**${characterName}'s** ${title} attempts to hit with a **${rollValue}**.`,
         Damage: `**${characterName}'s** ${title} caused **${rollValue}** damage.`,
-        Free: `**${characterName}** rolls ${match[2] || ''} with a ${match[4] || ''}`,
-        default: `**${characterName}** rolls ${title} for **${match[1] || ''}**.`
+        Free: `**${characterName}** rolls ${rollValue} with advantage`,
+        default: `**${characterName}** rolls ${title} for **${rollValue}**.`
     };
 
     return messageTemplates[rollType] || messageTemplates.default;
@@ -46,10 +46,11 @@ export function parseDiceHistory(history, title, characterName = "Unknown Charac
  * @param {string} contentMarkdown - The main content in markdown format
  * @returns {string} Formatted Discord message
  */
-export function prepareMessage(title, traits, contentMarkdown) {
+function prepareMessage(title, traits, contentMarkdown) {
+    const lines = contentMarkdown.split('\n').map(line => `> ${line}`).join('\n');
     return traits
-        ? `**${title}**\n> **Traits:** ${traits}\n> ${contentMarkdown}`
-        : `**${title}**\n> ${contentMarkdown}`;
+        ? `**${title}**\n> **Traits:** ${traits}\n${lines}`
+        : `**${title}**\n${lines}`;
 }
 
 /**
@@ -58,7 +59,7 @@ export function prepareMessage(title, traits, contentMarkdown) {
  * @param {string} avatarUrl - URL for the webhook avatar
  * @returns {Object} Formatted request body
  */
-export function createWebhookBody(message, avatarUrl = "https://i.imgur.com/xi6Qssm.png") {
+function createWebhookBody(message, avatarUrl = "https://i.imgur.com/xi6Qssm.png") {
     return {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,3 +69,10 @@ export function createWebhookBody(message, avatarUrl = "https://i.imgur.com/xi6Q
         }),
     };
 }
+
+module.exports = {
+    removePrefix,
+    parseDiceHistory,
+    prepareMessage,
+    createWebhookBody
+};

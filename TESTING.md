@@ -1,250 +1,196 @@
 # Testing Strategy for Alseta's Passage
 
 ## Overview
-Since we don't own the Pathbuilder codebase but need to ensure our extension works reliably, we'll implement a multi-layered testing approach:
+Based on direct observation of the Pathbuilder2e interface, we've identified key elements and interactions that need testing. This document outlines our testing strategy that doesn't require access to the Pathbuilder codebase.
 
-## 1. Mock Environment Testing
+## Test Categories
 
-### HTML Fixtures
-Create a local test environment that mimics Pathbuilder's DOM structure:
+### 1. DOM Structure Tests
+Test the extension's ability to identify and interact with Pathbuilder's DOM elements:
 
+```javascript
+describe('DOM Structure', () => {
+  test('identifies character name element', () => {
+    // Test finding .small-text.grey-text.button-text
+  });
+  
+  test('identifies dice history container', () => {
+    // Test finding #dice-history
+  });
+  
+  test('identifies weapon elements', () => {
+    // Test finding .listview-item elements
+  });
+});
+```
+
+### 2. Button Injection Tests
+Verify "Send to Discord" buttons are properly added:
+
+```javascript
+describe('Button Injection', () => {
+  test('adds button to weapon rolls', () => {
+    // Test button addition to weapon roll results
+  });
+  
+  test('adds button to skill checks', () => {
+    // Test button addition to skill check results
+  });
+  
+  test('handles dynamic content loading', () => {
+    // Test MutationObserver functionality
+  });
+});
+```
+
+### 3. Data Capture Tests
+Test extraction of roll and character information:
+
+```javascript
+describe('Data Capture', () => {
+  test('captures character context', () => {
+    // Test character name and level extraction
+  });
+  
+  test('captures roll details', () => {
+    // Test roll result and modifier extraction
+  });
+  
+  test('captures weapon traits', () => {
+    // Test trait extraction and formatting
+  });
+});
+```
+
+## Test Fixtures
+
+### 1. Basic Character View
 ```html
-<!-- test/fixtures/pathbuilder-mock.html -->
-<!DOCTYPE html>
-<html>
-<body>
-  <!-- Mock Pathbuilder DOM structure -->
-  <div class="dice-tray">
+<!-- test/fixtures/basic-character.html -->
+<div class="character-header">
+  <div class="small-text grey-text button-text">Character Name</div>
+  <div class="button-selection">Test Character</div>
+  <div class="level">1</div>
+</div>
+```
+
+### 2. Weapon Roll View
+```html
+<!-- test/fixtures/weapon-roll.html -->
+<div class="listview-item">
+  <div class="listview-title">Axe Musket - Melee</div>
+  <div class="listview-detail">
+    <div class="trait">Uncommon</div>
+    <div class="trait">Critical Fusion</div>
+  </div>
+</div>
+```
+
+### 3. Dice Roll History
+```html
+<!-- test/fixtures/dice-history.html -->
+<div id="dice-history">
+  <div class="dice-roll">
     <div id="dice-title">Attack Roll</div>
-    <div id="dice-history">
-      <!-- Mock dice roll history -->
-    </div>
+    <div class="roll-result">15</div>
+    <div class="roll-modifier">+8</div>
   </div>
-  
-  <div class="listview-item">
-    <div class="listview-title">Test Item</div>
-    <div class="listview-detail">
-      <div class="trait">Trait1</div>
-      <div class="trait">Trait2</div>
-      <!-- Other mock content -->
-    </div>
-  </div>
-  
-  <!-- Mock character data -->
-  <div class="div-statblock">
-    <!-- Character stats structure -->
-  </div>
-</body>
-</html>
+</div>
 ```
 
-### Test Data Generator
-Create scripts to generate realistic test data:
+## Test Scenarios
 
+### 1. Character Context Tests
+- No character loaded
+- Character with basic info
+- Character with full stats
+- Character name changes
+
+### 2. Roll Interaction Tests
+- Weapon attack rolls
+- Damage rolls
+- Skill checks
+- Saving throws
+- Multiple rapid rolls
+
+### 3. UI State Tests
+- Initial page load
+- Dynamic content loading
+- Page navigation
+- Error states
+
+## Test Implementation
+
+### 1. Setup Test Environment
 ```javascript
-// test/utils/mockDataGenerator.js
-export function generateMockDiceRoll() {
-  return {
-    type: 'Attack',
-    value: Math.floor(Math.random() * 20) + 1,
-    modifier: '+5',
-    timestamp: new Date().toISOString()
-  };
-}
-
-export function generateMockCharacter() {
-  return {
-    name: 'Test Character',
-    level: 5,
-    traits: ['Fighter', 'Human'],
-    // Other character data
-  };
-}
-```
-
-## 2. Unit Testing
-
-### Test Individual Modules
-Create unit tests for each utility and module:
-
-```javascript
-// test/unit/htmlUtils.test.js
-describe('HTML Utils', () => {
-  test('convertHtmlToMarkdown', () => {
-    const input = '<b>Bold</b> and <i>italic</i>';
-    expect(convertHtmlToMarkdown(input)).toBe('**Bold** and *italic*');
-  });
-});
-
-// test/unit/characterManager.test.js
-describe('Character Manager', () => {
-  test('extractCharacterData', () => {
-    const mockHtml = generateMockCharacterHtml();
-    const result = characterManager.extractCharacterData(mockHtml);
-    expect(result).toHaveProperty('name');
-    expect(result).toHaveProperty('level');
-  });
-});
-```
-
-## 3. Integration Testing
-
-### Mock Browser Environment
-Use tools like Jest with jsdom to simulate browser environment:
-
-```javascript
-// test/setup/browser-env.js
+// test/setup.js
 import { JSDOM } from 'jsdom';
+import fs from 'fs';
 
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-  url: 'https://pathbuilder2e.com/',
-  referrer: 'https://pathbuilder2e.com/',
-  contentType: 'text/html'
-});
+const setupTestDOM = (fixturePath) => {
+  const html = fs.readFileSync(fixturePath, 'utf8');
+  const dom = new JSDOM(html);
+  global.document = dom.window.document;
+  global.window = dom.window;
+};
+```
 
-global.window = dom.window;
-global.document = dom.window.document;
+### 2. Mock Browser APIs
+```javascript
+// test/mocks/browser-api.js
 global.browser = {
   runtime: {
     sendMessage: jest.fn(),
-    getURL: jest.fn()
+    onMessage: {
+      addListener: jest.fn()
+    }
   }
 };
 ```
 
-### Integration Test Scenarios
-Test complete workflows:
-
+### 3. Test Utilities
 ```javascript
-// test/integration/diceRoll.test.js
-describe('Dice Roll Integration', () => {
-  beforeEach(() => {
-    document.body.innerHTML = loadFixture('pathbuilder-mock.html');
-  });
-
-  test('dice roll capture and format', async () => {
-    // Simulate dice roll
-    const diceHistory = document.getElementById('dice-history');
-    diceHistory.innerHTML = generateMockDiceRoll();
-    
-    // Trigger observer
-    await waitForObserver();
-    
-    // Verify message formatting and sending
-    expect(browser.runtime.sendMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'logDiceHistory'
-      })
-    );
-  });
-});
+// test/utils/dom-helpers.js
+export const triggerMutation = (element) => {
+  const observer = new MutationObserver(() => {});
+  observer.observe(element, { childList: true, subtree: true });
+  element.innerHTML += ' '; // Trigger mutation
+};
 ```
 
-## 4. End-to-End Testing
+## Test Organization
 
-### Local Test Server
-Create a simple server that serves mock Pathbuilder pages:
-
-```javascript
-// test/server/index.js
-const express = require('express');
-const app = express();
-
-app.get('/', (req, res) => {
-  res.sendFile('pathbuilder-mock.html');
-});
-
-app.listen(3000, () => console.log('Test server running'));
-```
-
-### Automated Browser Testing
-Use Puppeteer for automated browser testing:
-
-```javascript
-// test/e2e/extension.test.js
-describe('Extension E2E', () => {
-  let browser, page;
-
-  beforeAll(async () => {
-    browser = await puppeteer.launch({
-      args: [
-        `--disable-extensions-except=${pathToExtension}`,
-        `--load-extension=${pathToExtension}`
-      ]
-    });
-  });
-
-  test('send to discord button functionality', async () => {
-    page = await browser.newPage();
-    await page.goto('http://localhost:3000');
-    
-    // Wait for extension to initialize
-    await page.waitForSelector('.discord-export-button');
-    
-    // Test button click and message sending
-    await page.click('.discord-export-button');
-    
-    // Verify webhook call
-    // This requires intercepting network requests
-  });
-});
-```
-
-## 5. Snapshot Testing
-
-### DOM Snapshots
-Create snapshots of key DOM manipulations:
-
-```javascript
-// test/snapshots/ui.test.js
-describe('UI Snapshots', () => {
-  test('export button injection', () => {
-    document.body.innerHTML = loadFixture('listview-item.html');
-    pageObserver.addDetailExportButton(document.querySelector('.listview-item'));
-    expect(document.body.innerHTML).toMatchSnapshot();
-  });
-});
-```
-
-## Implementation Steps
-
-1. Set up test environment:
-```bash
-npm install --save-dev jest jsdom puppeteer express
-```
-
-2. Create test directory structure:
 ```
 test/
 ├── fixtures/
+│   ├── basic-character.html
+│   ├── weapon-roll.html
+│   └── dice-history.html
 ├── unit/
+│   ├── htmlUtils.test.js
+│   ├── characterManager.test.js
+│   └── pageObserver.test.js
 ├── integration/
-├── e2e/
-├── utils/
-└── server/
+│   ├── buttonInjection.test.js
+│   └── discordCommunication.test.js
+└── setup/
+    ├── jest.setup.js
+    └── browser-mocks.js
 ```
 
-3. Add test scripts to package.json:
-```json
-{
-  "scripts": {
-    "test": "jest",
-    "test:unit": "jest test/unit",
-    "test:integration": "jest test/integration",
-    "test:e2e": "jest test/e2e",
-    "test:watch": "jest --watch"
-  }
-}
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:unit
+npm run test:integration
+
+# Run with coverage
+npm run test:coverage
 ```
-
-## Best Practices
-
-1. **Data Isolation**: Use fresh fixtures for each test
-2. **Async Handling**: Properly handle all asynchronous operations
-3. **Error Cases**: Test both success and failure scenarios
-4. **Network Mocking**: Mock Discord webhook calls
-5. **State Reset**: Clean up after each test
-6. **CI Integration**: Add tests to build pipeline
 
 ## Continuous Integration
 
@@ -263,8 +209,16 @@ jobs:
       - run: npm test
 ```
 
+## Next Steps
+
+1. Create test fixtures based on observed DOM structure
+2. Implement basic unit tests for utilities
+3. Add integration tests for critical paths
+4. Set up CI pipeline with automated testing
+5. Add test coverage reporting
+
 This testing strategy allows us to:
-- Verify functionality without Pathbuilder source code
+- Verify extension functionality without Pathbuilder source code
 - Catch integration issues early
 - Ensure consistent behavior across browsers
 - Maintain confidence in refactoring

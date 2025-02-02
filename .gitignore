@@ -2,6 +2,7 @@
 chrome/build/
 chrome/*.zip
 alsetas-passage*.zip
+node_modules/
 
 # System files
 .DS_Store

@@ -1,248 +1,145 @@
 /**
- * Module for managing page observers and dynamic content
+ * Module for observing and handling page changes
  */
 
-import characterManager from './characterManager.js';
-import { createExportButton, hasEventListener, registerEventListener } from '../utils/uiUtils.js';
+const { createExportButton } = require('../utils/uiUtils.js');
+const { extractAndFormatTraits, removeElementsFromHtml } = require('../utils/htmlUtils.js');
+const characterManager = require('./characterManager.js');
 
 class PageObserver {
     constructor() {
-        this.browser = chrome;
+        // Use browser for Firefox compatibility
+        this.browser = typeof chrome !== 'undefined' ? chrome : browser;
+        this.diceHistoryObserver = null;
+        this.sidebarObserver = null;
+        this.contentObserver = null;
     }
 
     /**
-     * Adds export button to a div element
+     * Add export button to detail div
      * @param {HTMLElement} div - The div to add button to
      */
     addDetailExportButton(div) {
-        let detailDiv = div.querySelector(".listview-detail") || div.querySelector(".listview-detail + *");
-        if (!detailDiv) return;
-
-        let button = detailDiv.querySelector(".discord-export-button");
-        if (button && hasEventListener(button, "click")) {
+        const detailDiv = div.querySelector('.listview-detail');
+        if (!detailDiv || detailDiv.querySelector('.discord-export-button')) {
             return;
         }
 
-        if (!button) {
-            button = createExportButton();
-            detailDiv.insertBefore(button, detailDiv.firstChild);
-        }
-
-        if (!hasEventListener(button, "click")) {
-            button.addEventListener("click", event => this.handleButtonClick(event, div));
-            registerEventListener(button, "click");
-        }
+        const button = createExportButton();
+        button.addEventListener('click', () => this.handleExportClick(div));
+        detailDiv.appendChild(button);
     }
 
     /**
-     * Handles button click events
-     * @param {Event} event - The click event
-     * @param {HTMLElement} div - The container div
+     * Handle export button click
+     * @param {HTMLElement} div - The div containing export data
      */
-    handleButtonClick(event, div) {
-        event.stopPropagation();
+    async handleExportClick(div) {
+        const title = div.querySelector('.listview-title')?.textContent.trim() || '';
+        const detailDiv = div.querySelector('.listview-detail');
+        const { traits, traitDivs } = extractAndFormatTraits(detailDiv);
 
-        const detailDiv = div.querySelector(".listview-detail") || div.querySelector(".listview-detail + *");
-        if (!detailDiv) {
-            console.error("No detailDiv found for", div);
-            return;
-        }
+        // Remove trait divs from content
+        const content = removeElementsFromHtml(detailDiv.innerHTML, traitDivs);
 
-        const title = div.querySelector(".listview-title")?.innerText || "";
-        const { traits, traitDivs } = this.extractAndFormatTraits(detailDiv);
-
-        let contentHtml = detailDiv.innerHTML;
-        contentHtml = this.removeElementsFromHtml(contentHtml, traitDivs);
-
-        const button = div.querySelector(".discord-export-button");
-        if (button) {
-            contentHtml = this.removeElementsFromHtml(contentHtml, [button]);
-        }
-
-        const contentMarkdown = this.convertHtmlToMarkdown(contentHtml);
-        const message = this.prepareMessage(title, traits, contentMarkdown);
-
-        console.log(`Preparing to send message to Discord: ${message}`);
-
-        this.browser.runtime.sendMessage({
-            action: "sendToDiscord",
-            message: message,
+        await this.browser.runtime.sendMessage({
+            action: 'sendToDiscord',
+            message: `**${title}**\n> **Traits:** ${traits}\n> ${content}`
         });
     }
 
     /**
-     * Extracts and formats traits from detail div
-     * @param {HTMLElement} detailDiv - The detail div element
-     * @returns {Object} Traits and trait divs
-     */
-    extractAndFormatTraits(detailDiv) {
-        const traitDivs = detailDiv.querySelectorAll(".trait");
-        const traits = Array.from(new Set(
-            Array.from(traitDivs).map(trait => `**${trait.innerText}**`)
-        )).join(" ");
-        return { traits, traitDivs };
-    }
-
-    /**
-     * Removes elements from HTML content
-     * @param {string} contentHtml - The HTML content
-     * @param {HTMLElement[]} elements - Elements to remove
-     * @returns {string} Updated HTML content
-     */
-    removeElementsFromHtml(contentHtml, elements) {
-        elements.forEach(element => {
-            contentHtml = contentHtml.replace(element.outerHTML, "");
-        });
-        return contentHtml;
-    }
-
-    /**
-     * Handles dynamically loaded content
+     * Handle dynamic content changes
      */
     handleDynamicContent() {
-        const containers = document.querySelectorAll(".listview-item, .div-info-lm-box");
-        containers.forEach(div => {
-            this.addDetailExportButton(div);
-            this.setupContainerClickListener(div);
-        });
-    }
-
-    /**
-     * Sets up click listener for container elements
-     * @param {HTMLElement} container - The container element
-     */
-    setupContainerClickListener(container) {
-        container.addEventListener("click", () => {
-            setTimeout(() => {
-                let hiddenDetailDiv = container.querySelector(".listview-detail.hidden") ||
-                    container.querySelector(".listview-detail.hidden + *");
-                if (hiddenDetailDiv) {
-                    hiddenDetailDiv.classList.remove("hidden");
-                    this.addDetailExportButton(container);
-                }
-            }, 500);
-        });
-    }
-
-    /**
-     * Observes dice history for changes
-     */
-    observeDiceHistory() {
-        const diceHistoryDiv = document.getElementById("dice-history");
-        if (!diceHistoryDiv) {
-            console.log("Dice history div not found");
-            return;
+        if (this.contentObserver) {
+            this.contentObserver.disconnect();
         }
 
-        const observer = new MutationObserver(() => {
-            this.logDiceHistory();
-        });
-
-        observer.observe(diceHistoryDiv, { childList: true });
-    }
-
-    /**
-     * Observes sidebar for updates
-     */
-    observeSidebar() {
-        const sidebar = document.querySelector(".dice-tray");
-        if (!sidebar) {
-            console.log("Sidebar not found");
-            return;
-        }
-
-        const observer = new MutationObserver(() => {
-            const diceTitle = characterManager.fetchDiceTitle();
-            const fetchedCharacterName = characterManager.fetchCharacterName();
-            if (fetchedCharacterName) {
-                characterManager.characterName = fetchedCharacterName;
-                console.log(`Updated Global Character Name: ${characterManager.characterName}`);
-            }
-            console.log(`Dice title updated: ${diceTitle}`);
-        });
-
-        observer.observe(sidebar, { childList: true, subtree: true });
-    }
-
-    /**
-     * Observes statblock for changes
-     */
-    observeStatblock() {
-        const statblock = document.querySelector(".div-statblock");
-        if (!statblock) return;
-
-        const observer = new MutationObserver(mutationsList => {
-            for (let mutation of mutationsList) {
-                if (mutation.type === 'childList' || mutation.type === 'subtree') {
-                    if (characterManager.isBetaPage()) {
-                        const htmlContent = statblock.innerHTML;
-                        const stats = characterManager.extractCharacterData(htmlContent);
-                        characterManager.characterName = stats.name;
-                        const diceTitle = characterManager.fetchDiceTitle();
-
-                        this.browser.runtime.sendMessage({
-                            action: "logCharacterName",
-                            data: characterManager.characterName,
-                            history: stats,
-                            title: diceTitle,
-                        });
-                    }
-                }
-            }
-        });
-
-        observer.observe(statblock, { childList: true, subtree: true });
-    }
-
-    /**
-     * Sets up page observer for statblock
-     */
-    observePageForStatblock() {
-        const observer = new MutationObserver(() => {
-            const statblock = document.querySelector(".div-statblock");
-            if (statblock) {
-                this.observeStatblock();
-                observer.disconnect();
-            }
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    /**
-     * Initializes all observers
-     */
-    initializeObservers() {
-        this.observeDiceHistory();
-        this.observeSidebar();
-        this.observePageForStatblock();
-    }
-
-    /**
-     * Sets up mutation observer for dynamic content
-     */
-    setupMutationObserver() {
-        const observer = new MutationObserver(mutations => {
+        this.contentObserver = new MutationObserver((mutations) => {
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1) { // Element Node
-                        if (node.matches(".listview-item, .div-info-lm-box")) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.classList?.contains('listview-item')) {
                             this.addDetailExportButton(node);
-                            this.setupContainerClickListener(node);
-                        } else {
-                            // Check for any child .listview-item elements
-                            node.querySelectorAll(".listview-item, .div-info-lm-box").forEach(child => {
-                                this.addDetailExportButton(child);
-                                this.setupContainerClickListener(child);
-                            });
                         }
+                        const items = node.querySelectorAll('.listview-item');
+                        items.forEach(item => this.addDetailExportButton(item));
                     }
                 });
             });
         });
 
-        observer.observe(document.body, { childList: true, subtree: true });
+        this.contentObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Handle initial items
+        document.querySelectorAll('.listview-item').forEach(item => {
+            this.addDetailExportButton(item);
+        });
+    }
+
+    /**
+     * Observe dice history changes
+     */
+    observeDiceHistory() {
+        const diceHistoryDiv = document.getElementById('dice-history');
+        if (!diceHistoryDiv) {
+            console.log('Dice history div not found');
+            return;
+        }
+
+        if (this.diceHistoryObserver) {
+            this.diceHistoryObserver.disconnect();
+        }
+
+        this.diceHistoryObserver = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    const newNode = mutation.addedNodes[0];
+                    if (newNode.nodeType === Node.ELEMENT_NODE) {
+                        this.handleDiceRoll(newNode);
+                    }
+                }
+            });
+        });
+
+        this.diceHistoryObserver.observe(diceHistoryDiv, {
+            childList: true
+        });
+    }
+
+    /**
+     * Handle new dice roll
+     * @param {HTMLElement} rollNode - The new roll element
+     */
+    async handleDiceRoll(rollNode) {
+        const characterName = characterManager.fetchCharacterName();
+        const diceTitle = characterManager.fetchDiceTitle();
+        const rollText = rollNode.textContent.trim();
+
+        await this.browser.runtime.sendMessage({
+            action: 'sendToDiscord',
+            message: `**${characterName || 'Unknown Character'}** rolled ${diceTitle}: ${rollText}`
+        });
+    }
+
+    /**
+     * Clean up observers
+     */
+    cleanup() {
+        if (this.diceHistoryObserver) {
+            this.diceHistoryObserver.disconnect();
+        }
+        if (this.contentObserver) {
+            this.contentObserver.disconnect();
+        }
+        if (this.sidebarObserver) {
+            this.sidebarObserver.disconnect();
+        }
     }
 }
 
-export default new PageObserver();
+module.exports = new PageObserver();

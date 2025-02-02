@@ -1,77 +1,117 @@
 /**
- * Utility functions for HTML manipulation and sanitization
+ * Utility functions for HTML manipulation
  */
 
 /**
- * Converts HTML content to Discord-compatible markdown
- * @param {string} htmlContent - The HTML content to convert
+ * Convert HTML to markdown format
+ * @param {string} html - HTML content to convert
  * @returns {string} Markdown formatted text
  */
-export function convertHtmlToMarkdown(htmlContent) {
-    let markdown = htmlContent;
-    markdown = markdown
-        .replace(/<b>(.*?)<\/b>/g, "**$1**")
-        .replace(/<i>(.*?)<\/i>/g, "*$1*")
-        .replace(/<br\s*\/?>/g, "\n")
-        .replace(/<[^>]+>/g, "\n");
-    return markdown.trim();
+function convertHtmlToMarkdown(html) {
+    return html
+        .replace(/<b>(.*?)<\/b>/g, '**$1**')
+        .replace(/<i>(.*?)<\/i>/g, '*$1*')
+        .replace(/<br\s*\/?>/g, '\n');
 }
 
 /**
- * Sanitizes HTML content by removing scripts and event attributes
- * @param {string} str - The HTML string to sanitize
+ * Sanitize HTML content
+ * @param {string} html - HTML content to sanitize
  * @returns {string} Sanitized HTML
  */
-export function sanitizeHTML(str) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = str;
+function sanitizeHTML(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
 
-    // Remove script elements
-    const scripts = tempDiv.getElementsByTagName('script');
-    while (scripts.length > 0) {
+    // Remove script tags
+    const scripts = div.getElementsByTagName('script');
+    while (scripts[0]) {
         scripts[0].parentNode.removeChild(scripts[0]);
     }
 
     // Remove event attributes
-    const elements = tempDiv.getElementsByTagName('*');
-    Array.from(elements).forEach(element => {
-        Array.from(element.attributes).forEach(attr => {
-            if (attr.name.startsWith('on')) {
-                element.removeAttribute(attr.name);
+    const elements = div.getElementsByTagName('*');
+    for (let i = 0; i < elements.length; i++) {
+        const attrs = elements[i].attributes;
+        for (let j = attrs.length - 1; j >= 0; j--) {
+            if (attrs[j].name.startsWith('on')) {
+                elements[i].removeAttribute(attrs[j].name);
             }
-        });
-    });
+        }
+    }
 
-    return tempDiv.innerHTML;
+    return div.innerHTML;
 }
 
 /**
- * Formats list view details by adding proper line breaks and indentation
- * @param {string} details - The details to format
+ * Format list view details
+ * @param {string} details - Details to format
  * @returns {string} Formatted details
  */
-export function formatListViewDetails(details) {
-    return details.replace(/\n+/g, "\n> ").trim();
+function formatListViewDetails(details) {
+    if (!details) return '';
+    const lines = details.split('\n').filter(line => line.trim());
+    if (lines.length <= 1) return details;
+
+    return lines[0] + '\n' + lines.slice(1)
+        .map(line => `> ${line}`)
+        .join('\n');
 }
 
 /**
- * Strips all HTML tags from a string
- * @param {string} html - The HTML string to strip
- * @returns {string} Plain text without HTML tags
+ * Remove elements from HTML content
+ * @param {string} html - HTML content
+ * @param {HTMLElement[]} elements - Elements to remove
+ * @returns {string} HTML with elements removed
  */
-export function stripHTML(html) {
-    return html.replace(/<\/?[^>]+(>|$)/g, " ");
+function removeElementsFromHtml(html, elements) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+
+    elements.forEach(element => {
+        const selector = element.tagName.toLowerCase() +
+            Array.from(element.classList)
+                .map(c => '.' + c)
+                .join('');
+        const match = div.querySelector(selector);
+        if (match) {
+            match.parentNode.removeChild(match);
+        }
+    });
+
+    return div.innerHTML;
 }
 
 /**
- * Safely extracts text content from HTML elements
- * @param {HTMLElement} tempDiv - The container element
+ * Extract and format traits from container
+ * @param {HTMLElement} container - Container element
+ * @returns {Object} Traits and trait divs
+ */
+function extractAndFormatTraits(container) {
+    const traitDivs = Array.from(container.querySelectorAll('.trait'));
+    const uniqueTraits = [...new Set(traitDivs.map(div => div.textContent.trim()))];
+    const traits = uniqueTraits.map(trait => `**${trait}**`).join(' ');
+    return { traits, traitDivs };
+}
+
+/**
+ * Safely extract text content from element
+ * @param {HTMLElement} container - Container element
  * @param {string} selector - CSS selector
- * @param {number} index - Index of the element to extract from
- * @param {string} defaultValue - Default value if element not found
- * @returns {string} Extracted text content
+ * @param {number} index - Element index
+ * @param {string} defaultValue - Default value
+ * @returns {string} Extracted text or default value
  */
-export function safeExtract(tempDiv, selector, index = 0, defaultValue = "") {
-    const elements = tempDiv.querySelectorAll(selector);
-    return elements.length > index ? elements[index].innerText.trim() : defaultValue;
+function safeExtract(container, selector, index = 0, defaultValue = '') {
+    const elements = container.querySelectorAll(selector);
+    return elements.length > index ? elements[index].textContent.trim() : defaultValue;
 }
+
+module.exports = {
+    convertHtmlToMarkdown,
+    sanitizeHTML,
+    formatListViewDetails,
+    removeElementsFromHtml,
+    extractAndFormatTraits,
+    safeExtract
+};

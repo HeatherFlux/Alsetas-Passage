@@ -20,17 +20,20 @@ class CharacterManager {
 
     /**
      * Fetches character name from the page
-     * @returns {string} Character name
+     * @returns {string|null} Character name or null if not found
      */
     fetchCharacterName() {
         const characterNameDiv = Array.from(document.querySelectorAll(".small-text.grey-text.button-text"))
             .find(div => div.textContent.trim() === "Character Name");
-        const nextSiblingDiv = characterNameDiv?.nextElementSibling;
-        const name = nextSiblingDiv && nextSiblingDiv.classList.contains("button-selection")
-            ? nextSiblingDiv.textContent.trim()
-            : "";
-        console.log(`Fetched Character Name: ${name}`);
-        return name;
+
+        if (!characterNameDiv) return null;
+
+        const nextSiblingDiv = characterNameDiv.nextElementSibling;
+        if (!nextSiblingDiv || !nextSiblingDiv.classList.contains("button-selection")) {
+            return null;
+        }
+
+        return nextSiblingDiv.textContent.trim();
     }
 
     /**
@@ -39,9 +42,7 @@ class CharacterManager {
      */
     fetchDiceTitle() {
         const diceTitleDiv = document.getElementById("dice-title");
-        const title = diceTitleDiv ? diceTitleDiv.textContent.trim() : "";
-        console.log(`Fetched Dice Title: ${title}`);
-        return title;
+        return diceTitleDiv ? diceTitleDiv.textContent.trim() : "";
     }
 
     /**
@@ -54,34 +55,58 @@ class CharacterManager {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = sanitizedContent;
 
-        const characterData = {
-            name: safeExtract(tempDiv, '.subtitle', 0),
-            level: safeExtract(tempDiv, '.item-level-box', 0),
-            traits: Array.from(tempDiv.querySelectorAll('.trait')).map(trait => trait.innerText.trim()),
+        return {
+            name: this._extractName(tempDiv),
+            level: this._extractLevel(tempDiv),
+            traits: this._extractTraits(tempDiv),
             skills: this._extractSkills(tempDiv),
             ...this._extractCombatStats(tempDiv),
             ...this._extractAbilityScores(tempDiv),
             ...this._extractInventoryAndSpells(tempDiv)
         };
-
-        console.log("Extracted Character Data:", characterData);
-        return characterData;
     }
 
     /**
-     * Extracts and formats character skills
+     * Extracts character name
+     * @private
+     */
+    _extractName(tempDiv) {
+        return safeExtract(tempDiv, '.subtitle') || '';
+    }
+
+    /**
+     * Extracts character level
+     * @private
+     */
+    _extractLevel(tempDiv) {
+        return safeExtract(tempDiv, '.item-level-box') || '';
+    }
+
+    /**
+     * Extracts traits
+     * @private
+     */
+    _extractTraits(tempDiv) {
+        return Array.from(tempDiv.querySelectorAll('.trait'))
+            .map(trait => trait.textContent.trim());
+    }
+
+    /**
+     * Extracts skills
      * @private
      */
     _extractSkills(tempDiv) {
-        return Array.from(tempDiv.querySelectorAll('.button-mystery')).map(skill => {
-            const skillName = skill.querySelector('b')?.innerText || '';
-            const skillValue = skill.querySelector('span')?.innerText || '';
-            return `${skillName} ${skillValue}`.trim();
-        });
+        return Array.from(tempDiv.querySelectorAll('.button-mystery'))
+            .map(skill => {
+                const name = skill.querySelector('b')?.textContent || '';
+                const value = skill.querySelector('span')?.textContent || '';
+                return `${name} ${value}`.trim();
+            })
+            .filter(skill => skill !== '');
     }
 
     /**
-     * Extracts combat-related statistics
+     * Extracts combat stats
      * @private
      */
     _extractCombatStats(tempDiv) {
@@ -102,24 +127,21 @@ class CharacterManager {
      * @private
      */
     _extractAbilityScores(tempDiv) {
+        const text = tempDiv.textContent || '';
+        const match = text.match(/Str\s[+-]\d,\sDex\s[+-]\d,\sCon\s[+-]\d,\sInt\s[+-]\d,\sWis\s[+-]\d,\sCha\s[+-]\d/);
         return {
-            abilities: tempDiv.innerText.match(/Str\s[+-]\d,\sDex\s[+-]\d,\sCon\s[+-]\d,\sInt\s[+-]\d,\sWis\s[+-]\d,\sCha\s[+-]\d/)?.[0] || ""
+            abilities: match ? match[0] : ""
         };
     }
 
     /**
-     * Extracts inventory and spell information
+     * Extracts inventory and spells
      * @private
      */
     _extractInventoryAndSpells(tempDiv) {
         return {
             items: this._findStatValueWithPrefix(tempDiv, 'Items'),
-            spells: Array.from(tempDiv.querySelectorAll('b'))
-                .find(b => b.innerText.includes("Spells"))
-                ?.parentNode?.innerText
-                .replace(Array.from(tempDiv.querySelectorAll('b'))
-                    .find(b => b.innerText.includes("Spells")).innerText, "")
-                .trim() || ""
+            spells: this._extractSpells(tempDiv)
         };
     }
 
@@ -128,9 +150,9 @@ class CharacterManager {
      * @private
      */
     _findStatValue(tempDiv, statName) {
-        return Array.from(tempDiv.querySelectorAll('b'))
-            .find(b => b.innerText === statName)
-            ?.nextElementSibling?.innerText.trim() || "";
+        const node = Array.from(tempDiv.querySelectorAll('b'))
+            .find(b => b.textContent === statName);
+        return node?.nextElementSibling?.textContent.trim() || "";
     }
 
     /**
@@ -138,9 +160,9 @@ class CharacterManager {
      * @private
      */
     _findSaveValue(tempDiv, saveName) {
-        return Array.from(tempDiv.querySelectorAll('.button-mystery'))
-            .find(b => b.innerText.includes(saveName))
-            ?.querySelector('span')?.innerText.trim() || "";
+        const node = Array.from(tempDiv.querySelectorAll('.button-mystery'))
+            .find(b => b.textContent?.includes(saveName));
+        return node?.querySelector('span')?.textContent.trim() || "";
     }
 
     /**
@@ -148,9 +170,21 @@ class CharacterManager {
      * @private
      */
     _findStatValueWithPrefix(tempDiv, prefix) {
-        return Array.from(tempDiv.querySelectorAll('b'))
-            .find(b => b.innerText === prefix)
-            ?.nextSibling?.nodeValue.trim() || "";
+        const node = Array.from(tempDiv.querySelectorAll('b'))
+            .find(b => b.textContent === prefix);
+        return node?.nextSibling?.nodeValue?.trim() || "";
+    }
+
+    /**
+     * Helper method to extract spells
+     * @private
+     */
+    _extractSpells(tempDiv) {
+        const spellsNode = Array.from(tempDiv.querySelectorAll('b'))
+            .find(b => b.textContent?.includes("Spells"));
+        return spellsNode ?
+            spellsNode.parentNode.textContent.replace(spellsNode.textContent, "").trim() :
+            "";
     }
 }
 
