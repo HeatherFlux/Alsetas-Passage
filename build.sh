@@ -36,16 +36,53 @@ get_version() {
     if [ ! -f "$manifest_path" ]; then
         print_red "Error: manifest.json not found at $manifest_path"
         exit 1
-    }
+    fi
     version=$(grep -o '"version": "[^"]*"' "$manifest_path" | cut -d'"' -f4)
     echo $version
 }
+    
 
 # Clean previous builds
 clean_builds() {
     print_blue "Cleaning previous builds..."
     rm -f alsetas-passage-*.zip alsetas-passage-*.xpi
     rm -rf chrome/build firefox/build
+}
+
+# Function to create extension package
+create_package() {
+    local type=$1
+    local version=$2
+    local build_dir="$type/build"
+    
+    # Create build directory
+    mkdir -p "$build_dir"
+    
+    # Copy necessary files
+    print_blue "Copying files to build directory..."
+    cp "$type/manifest.json" "$build_dir/"
+    cp "$type/background.js" "$build_dir/"
+    cp "$type/content.bundle.js" "$build_dir/"
+    cp "$type/popup.html" "$build_dir/"
+    cp "$type/popup.css" "$build_dir/"
+    cp "$type/toast.css" "$build_dir/"
+    cp -r "$type/icons" "$build_dir/"
+    
+    # Create package based on type
+    if [ "$type" = "chrome" ]; then
+        cd "$build_dir"
+        zip -r "../../alsetas-passage-v${version}.zip" ./*
+        cd ../..
+        print_green "✓ Successfully created alsetas-passage-v${version}.zip"
+    else
+        cd "$build_dir"
+        zip -r "../../alsetas-passage-firefox-v${version}.xpi" ./*
+        cd ../..
+        print_green "✓ Successfully created alsetas-passage-firefox-v${version}.xpi"
+    fi
+    
+    # Clean up build directory
+    rm -rf "$build_dir"
 }
 
 # Build Chrome extension
@@ -56,24 +93,15 @@ build_chrome() {
     chrome_version=$(get_version "chrome/manifest.json")
     print_blue "Chrome version: $chrome_version"
     
-    # Execute Chrome build script
-    cd chrome
-    if [ -f "build.sh" ]; then
-        chmod +x build.sh
-        ./build.sh
-        if [ $? -eq 0 ]; then
-            print_green "Chrome extension built successfully!"
-            # Move the built package to root
-            mv "alsetas-passage-v${chrome_version}.zip" ../
-        else
-            print_red "Chrome build failed!"
-            exit 1
-        fi
+    # Bundle with webpack
+    npx webpack --config webpack.config.js --env target=chrome
+    if [ $? -eq 0 ]; then
+        print_green "Chrome bundle created successfully!"
+        create_package "chrome" "$chrome_version"
     else
-        print_red "Chrome build.sh not found!"
+        print_red "Chrome webpack build failed!"
         exit 1
     fi
-    cd ..
 }
 
 # Build Firefox extension
@@ -84,24 +112,15 @@ build_firefox() {
     firefox_version=$(get_version "firefox/manifest.json")
     print_blue "Firefox version: $firefox_version"
     
-    # Execute Firefox build script
-    cd firefox
-    if [ -f "build.sh" ]; then
-        chmod +x build.sh
-        ./build.sh
-        if [ $? -eq 0 ]; then
-            print_green "Firefox extension built successfully!"
-            # Move the built package to root
-            mv "alsetas-passage-firefox-v${firefox_version}.xpi" ../
-        else
-            print_red "Firefox build failed!"
-            exit 1
-        fi
+    # Bundle with webpack
+    npx webpack --config webpack.config.js --env target=firefox
+    if [ $? -eq 0 ]; then
+        print_green "Firefox bundle created successfully!"
+        create_package "firefox" "$firefox_version"
     else
-        print_red "Firefox build.sh not found!"
+        print_red "Firefox webpack build failed!"
         exit 1
     fi
-    cd ..
 }
 
 # Main build process

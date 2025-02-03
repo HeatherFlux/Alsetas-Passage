@@ -30,6 +30,16 @@ class DiscordManager {
      */
     async sendToDiscord(message) {
         try {
+            // Check message size (Discord limit is 2000 characters)
+            const messageSize = new TextEncoder().encode(message).length;
+            if (messageSize > 2000) {
+                console.error("Message too large:", {
+                    size: messageSize,
+                    preview: message.substring(0, 100) + "..."
+                });
+                return `Error: Message size (${messageSize} bytes) exceeds Discord's 2000 character limit`;
+            }
+
             const { webhooks = [], activeWebhook } = await this.getStorageData([
                 "webhooks",
                 "activeWebhook"
@@ -45,15 +55,35 @@ class DiscordManager {
             const response = await fetch(webhook.url, createWebhookBody(message));
 
             if (response.ok) {
-                console.log("Message sent to Discord");
+                console.log("Message sent to Discord successfully");
                 return "Message sent";
             } else {
-                console.error("Error sending message to Discord:", response.statusText);
-                return "Error";
+                let errorDetails;
+                try {
+                    errorDetails = await response.json();
+                } catch {
+                    errorDetails = await response.text();
+                }
+
+                console.error("Discord API Error:", {
+                    status: response.status,
+                    statusText: response.statusText,
+                    responseBody: errorDetails,
+                    messageSize: messageSize,
+                    messagePreview: message.substring(0, 100) + "..."
+                });
+
+                const errorMessage = errorDetails?.message || errorDetails || response.statusText;
+                return `Error: ${response.status} - ${errorMessage}`;
             }
         } catch (error) {
-            console.error("Error:", error);
-            return "Error";
+            console.error("Error in sendToDiscord:", {
+                error: error.message,
+                stack: error.stack,
+                messageSize: message ? new TextEncoder().encode(message).length : 'N/A',
+                messagePreview: message ? message.substring(0, 100) + "..." : 'N/A'
+            });
+            return `Error: ${error.message}`;
         }
     }
 
@@ -65,9 +95,32 @@ class DiscordManager {
     async handleSendToDiscord(request, sendResponse) {
         try {
             const result = await this.sendToDiscord(request.message);
-            sendResponse({ status: result === "Message sent" ? "ok" : "error" });
+            if (result.startsWith("Error:")) {
+                sendResponse({
+                    status: "error",
+                    message: result,
+                    details: {
+                        messageSize: new TextEncoder().encode(request.message).length,
+                        messagePreview: request.message.substring(0, 100) + "..."
+                    }
+                });
+            } else {
+                sendResponse({ status: "ok" });
+            }
         } catch (error) {
-            sendResponse({ status: "error", message: error.message });
+            console.error("Handler error:", {
+                error: error.message,
+                stack: error.stack,
+                messageSize: request.message ? new TextEncoder().encode(request.message).length : 'N/A'
+            });
+            sendResponse({
+                status: "error",
+                message: error.message,
+                details: {
+                    messageSize: request.message ? new TextEncoder().encode(request.message).length : 'N/A',
+                    messagePreview: request.message ? request.message.substring(0, 100) + "..." : 'N/A'
+                }
+            });
         }
     }
 
@@ -82,9 +135,32 @@ class DiscordManager {
 
         try {
             const result = await this.sendToDiscord(formattedMessage);
-            sendResponse({ status: result === "Message sent" ? "ok" : "error" });
+            if (result.startsWith("Error:")) {
+                sendResponse({
+                    status: "error",
+                    message: result,
+                    details: {
+                        messageSize: new TextEncoder().encode(formattedMessage).length,
+                        messagePreview: formattedMessage.substring(0, 100) + "..."
+                    }
+                });
+            } else {
+                sendResponse({ status: "ok" });
+            }
         } catch (error) {
-            sendResponse({ status: "error", message: error.message });
+            console.error("Handler error:", {
+                error: error.message,
+                stack: error.stack,
+                messageSize: formattedMessage ? new TextEncoder().encode(formattedMessage).length : 'N/A'
+            });
+            sendResponse({
+                status: "error",
+                message: error.message,
+                details: {
+                    messageSize: formattedMessage ? new TextEncoder().encode(formattedMessage).length : 'N/A',
+                    messagePreview: formattedMessage ? formattedMessage.substring(0, 100) + "..." : 'N/A'
+                }
+            });
         }
     }
 
@@ -99,9 +175,32 @@ class DiscordManager {
 
         try {
             const result = await this.sendToDiscord(formattedMessage);
-            sendResponse({ status: result === "Message sent" ? "ok" : "error" });
+            if (result.startsWith("Error:")) {
+                sendResponse({
+                    status: "error",
+                    message: result,
+                    details: {
+                        messageSize: new TextEncoder().encode(formattedMessage).length,
+                        messagePreview: formattedMessage.substring(0, 100) + "..."
+                    }
+                });
+            } else {
+                sendResponse({ status: "ok" });
+            }
         } catch (error) {
-            sendResponse({ status: "error", message: error.message });
+            console.error("Handler error:", {
+                error: error.message,
+                stack: error.stack,
+                messageSize: formattedMessage ? new TextEncoder().encode(formattedMessage).length : 'N/A'
+            });
+            sendResponse({
+                status: "error",
+                message: error.message,
+                details: {
+                    messageSize: formattedMessage ? new TextEncoder().encode(formattedMessage).length : 'N/A',
+                    messagePreview: formattedMessage ? formattedMessage.substring(0, 100) + "..." : 'N/A'
+                }
+            });
         }
     }
 

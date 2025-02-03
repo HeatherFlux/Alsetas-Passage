@@ -30,9 +30,13 @@
         "https://pathbuilder2e.com/beta/*"
       ],
       "css": ["toast.css"],
-      "js": ["content.js"],
+      "js": ["content.bundle.js"],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    "src/utils/*.js",
+    "src/modules/*.js"
   ],
   "browser_specific_settings": {
     "gecko": {

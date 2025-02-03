@@ -117,28 +117,25 @@ describe('UI Utilities', () => {
     describe('injectCSS', () => {
         test('injects CSS link element', () => {
             const cssPath = 'test.css';
+            const mockUrl = 'chrome-extension://mock-id/test.css';
+            browser.runtime.getURL.mockReturnValueOnce(mockUrl);
+
             injectCSS(cssPath);
 
             const linkElement = document.querySelector('link[rel="stylesheet"]');
             expect(linkElement).toBeTruthy();
-            expect(linkElement.href).toContain(cssPath);
+            expect(linkElement.href).toBe(mockUrl);
         });
 
         test('uses browser.runtime.getURL for path', () => {
             const cssPath = 'test.css';
-            const mockUrl = 'chrome-extension://id/test.css';
-            global.browser = {
-                runtime: {
-                    getURL: jest.fn().mockReturnValue(mockUrl)
-                }
-            };
+            const mockUrl = 'chrome-extension://mock-id/test.css';
+            browser.runtime.getURL.mockReturnValueOnce(mockUrl);
 
             injectCSS(cssPath);
             const linkElement = document.querySelector('link[rel="stylesheet"]');
             expect(linkElement.href).toBe(mockUrl);
             expect(browser.runtime.getURL).toHaveBeenCalledWith(cssPath);
-
-            delete global.browser;
         });
     });
 

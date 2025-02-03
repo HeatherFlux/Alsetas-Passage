@@ -34,6 +34,24 @@ class PageObserver {
      * Handle export button click
      * @param {HTMLElement} div - The div containing export data
      */
+    prepareMessage(title, traits, content) {
+        let message = traits
+            ? `**${title}**\n> **Traits:** ${traits}\n> ${content}`
+            : `**${title}**\n> ${content}`;
+
+        // Check if message might exceed Discord's limit and truncate if necessary
+        const messageSize = new TextEncoder().encode(message).length;
+        if (messageSize > 1900) { // Leave some buffer for safety
+            const truncateAt = 1800 - title.length - (traits ? traits.length : 0);
+            const truncatedContent = content.substring(0, truncateAt);
+            message = traits
+                ? `**${title}**\n> **Traits:** ${traits}\n> ${truncatedContent}...\n> (Content truncated due to Discord's message limit)`
+                : `**${title}**\n> ${truncatedContent}...\n> (Content truncated due to Discord's message limit)`;
+        }
+
+        return message;
+    }
+
     async handleExportClick(div) {
         const title = div.querySelector('.listview-title')?.textContent.trim() || '';
         const detailDiv = div.querySelector('.listview-detail');
@@ -42,10 +60,20 @@ class PageObserver {
         // Remove trait divs from content
         const content = removeElementsFromHtml(detailDiv.innerHTML, traitDivs);
 
-        await this.browser.runtime.sendMessage({
-            action: 'sendToDiscord',
-            message: `**${title}**\n> **Traits:** ${traits}\n> ${content}`
-        });
+        const message = this.prepareMessage(title, traits, content);
+
+        try {
+            const response = await this.browser.runtime.sendMessage({
+                action: 'sendToDiscord',
+                message: message
+            });
+
+            if (response?.status !== "ok") {
+                console.error("Failed to send message:", response);
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
     }
 
     /**

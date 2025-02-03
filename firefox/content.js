@@ -25,23 +25,39 @@ function initializeExtension() {
   console.log('Resources Injected');
 
   console.log("Starting Observers");
-  pageObserver.observeDiceHistory();
-  pageObserver.observeSidebar();
-  pageObserver.handleDynamicContent();
-  pageObserver.setupMutationObserver();
+  pageObserver.handleDynamicContent(); // This now calls initialize() internally
   console.log("Observers Started");
 }
 
 /**
  * Observes for new content and reinitializes if needed
  */
+// Track the content observer separately since it's not part of PageObserver
+let contentObserver = null;
+
 function observeForNewContent() {
-  const observer = new MutationObserver(() => {
-    console.log("DOM mutation detected, initializing extension.");
-    initializeExtension();
+  // Cleanup existing content observer if it exists
+  if (contentObserver) {
+    contentObserver.disconnect();
+  }
+
+  contentObserver = new MutationObserver((mutations) => {
+    // Only reinitialize if significant changes occurred
+    const hasSignificantChanges = mutations.some(mutation =>
+      Array.from(mutation.addedNodes).some(node =>
+        node.nodeType === 1 && // Element node
+        (node.matches('.dice-tray, #dice-history') || // Important containers
+          node.querySelector('.dice-tray, #dice-history')) // Or contains important elements
+      )
+    );
+
+    if (hasSignificantChanges) {
+      console.log("Significant DOM changes detected, reinitializing extension.");
+      initializeExtension();
+    }
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  contentObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 /**

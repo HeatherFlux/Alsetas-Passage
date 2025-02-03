@@ -8,7 +8,24 @@ import characterManager from './characterManager.js';
 
 class PageObserver {
     constructor() {
+        this.observers = new Set();
         this.setupMessageHandling();
+    }
+
+    /**
+     * Disconnects all active observers
+     */
+    cleanup() {
+        this.observers.forEach(observer => observer.disconnect());
+        this.observers.clear();
+    }
+
+    /**
+     * Tracks a new observer
+     * @param {MutationObserver} observer - The observer to track
+     */
+    trackObserver(observer) {
+        this.observers.add(observer);
     }
 
     /**
@@ -17,18 +34,32 @@ class PageObserver {
     setupMessageHandling() {
         this.sendToDiscord = async (message) => {
             try {
+                console.log("Attempting to send message to Discord. Size:", new TextEncoder().encode(message).length, "bytes");
+
                 const response = await browser.runtime.sendMessage({
                     action: "sendToDiscord",
                     message: message,
                 });
-
                 if (response?.status !== "ok") {
-                    showToast("Error sending to Discord");
-                    console.error("Failed to send message to background script");
+                    const errorMsg = response?.message || "Unknown error";
+                    const details = response?.details || {};
+
+                    showToast(`Error sending to Discord: ${errorMsg}`);
+                    console.error("Failed to send message to background script:", {
+                        response,
+                        error: errorMsg,
+                        messageSize: details.messageSize || new TextEncoder().encode(message).length,
+                        messagePreview: details.messagePreview || message.substring(0, 100) + "..."
+                    });
                 }
             } catch (error) {
-                showToast("Error sending to Discord");
-                console.error("Error sending message to background script:", error);
+                showToast(`Error sending to Discord: ${error.message || "Unknown error"}`);
+                console.error("Error sending message to background script:", {
+                    error: error.message,
+                    stack: error.stack,
+                    messageSize: new TextEncoder().encode(message).length,
+                    messagePreview: message.substring(0, 100) + "..."
+                });
             }
         };
     }
@@ -66,7 +97,7 @@ class PageObserver {
      * @param {Event} event - The click event
      * @param {HTMLElement} div - The container div
      */
-    handleButtonClick(event, div) {
+    async handleButtonClick(event, div) {
         event.stopPropagation();
 
         let detailDiv = div.querySelector(".listview-detail");
@@ -80,9 +111,10 @@ class PageObserver {
         }
 
         const titleDiv = div.querySelector(".listview-title");
-        const title = titleDiv ? titleDiv.innerText : "";
+        const title = (titleDiv && titleDiv.innerText) ? titleDiv.innerText.trim() : "Untitled";
 
         const { traits, traitDivs } = extractAndFormatTraits(detailDiv);
+        const formattedTraits = traits ? traits.trim() : "";
 
         let contentHtml = detailDiv.innerHTML;
         contentHtml = removeElementsFromHtml(contentHtml, traitDivs);
@@ -92,10 +124,10 @@ class PageObserver {
             contentHtml = removeElementsFromHtml(contentHtml, [button]);
         }
 
-        const contentMarkdown = convertHtmlToMarkdown(contentHtml);
-        const message = this.prepareMessage(title, traits, contentMarkdown);
+        const contentMarkdown = convertHtmlToMarkdown(contentHtml).trim();
+        const message = this.prepareMessage(title || "Untitled", formattedTraits, contentMarkdown);
 
-        this.sendToDiscord(message);
+        await this.sendToDiscord(message);
     }
 
     /**
@@ -107,15 +139,41 @@ class PageObserver {
      */
     prepareMessage(title, traits, contentMarkdown) {
         const formattedDetails = contentMarkdown.replace(/\n+/g, "\n> ").trim();
-        return traits
+        let message = traits
             ? `**${title}**\n> **Traits:** ${traits}\n> ${formattedDetails}`
             : `**${title}**\n> ${formattedDetails}`;
+
+        // Check if message might exceed Discord's limit and truncate if necessary
+        const messageSize = new TextEncoder().encode(message).length;
+        if (messageSize > 1900) { // Leave some buffer for safety
+            const truncateAt = 1800 - title.length - (traits ? traits.length : 0);
+            const truncatedDetails = formattedDetails.substring(0, truncateAt);
+            message = traits
+                ? `**${title}**\n> **Traits:** ${traits}\n> ${truncatedDetails}...\n> (Content truncated due to Discord's message limit)`
+                : `**${title}**\n> ${truncatedDetails}...\n> (Content truncated due to Discord's message limit)`;
+        }
+
+        return message;
+    }
+
+    /**
+     * Initializes all observers
+     */
+    initialize() {
+        this.cleanup(); // Clean up any existing observers
+        this.observeDiceHistory();
+        this.observeSidebar();
+        this.setupMutationObserver();
     }
 
     /**
      * Handles dynamically loaded content
      */
     handleDynamicContent() {
+        // Initialize all observers first
+        this.initialize();
+
+        // Process existing containers
         const containers = document.querySelectorAll(".listview-item, .div-info-lm-box");
         containers.forEach(div => {
             this.addDetailExportButton(div);
@@ -130,13 +188,15 @@ class PageObserver {
     setupContainerClickListener(container) {
         container.addEventListener("click", () => {
             setTimeout(() => {
-                let hiddenDetailDiv = container.querySelector(".listview-detail.hidden");
-                if (hiddenDetailDiv && hiddenDetailDiv.innerHTML.trim() === "") {
-                    hiddenDetailDiv = hiddenDetailDiv.nextElementSibling;
+                let detailDiv = container.querySelector(".listview-detail");
+                if (detailDiv && detailDiv.innerHTML.trim() === "") {
+                    detailDiv = detailDiv.nextElementSibling;
                 }
-                if (hiddenDetailDiv) {
-                    hiddenDetailDiv.classList.remove("hidden");
-                    this.addDetailExportButton(container);
+                if (detailDiv) {
+                    detailDiv.classList.toggle("hidden");
+                    if (!detailDiv.classList.contains("hidden")) {
+                        this.addDetailExportButton(container);
+                    }
                 }
             }, 500);
         });
@@ -152,7 +212,9 @@ class PageObserver {
             return;
         }
 
+        // Create and track the observer
         const observer = new MutationObserver(() => this.logDiceHistory());
+        this.trackObserver(observer);
         observer.observe(diceHistoryDiv, { childList: true });
     }
 
@@ -168,31 +230,14 @@ class PageObserver {
             if (!latestHistory) throw new Error('No History Found');
 
             const diceTitle = characterManager.fetchDiceTitle();
+            const characterName = characterManager.fetchCharacterName() || characterManager.characterName || "Unknown Character";
 
-            if (characterManager.isBetaPage()) {
-                await browser.runtime.sendMessage({
-                    action: "logCharacterName",
-                    data: characterManager.characterName,
-                    history: latestHistory.innerHTML,
-                    title: diceTitle,
-                });
-            } else {
-                const fetchedCharacterName = characterManager.fetchCharacterName();
-                if (fetchedCharacterName) {
-                    await browser.runtime.sendMessage({
-                        action: "logCharacterName",
-                        data: fetchedCharacterName,
-                        history: latestHistory.innerHTML,
-                        title: diceTitle,
-                    });
-                } else {
-                    await browser.runtime.sendMessage({
-                        action: "logDiceHistory",
-                        data: latestHistory.innerHTML,
-                        title: diceTitle,
-                    });
-                }
-            }
+            await browser.runtime.sendMessage({
+                action: "logCharacterName",
+                data: characterName,
+                history: latestHistory.innerHTML,
+                title: diceTitle || "Roll"
+            });
         } catch (error) {
             console.error("Error logging dice history:", error);
         }
@@ -213,6 +258,7 @@ class PageObserver {
             }
         });
 
+        this.trackObserver(observer);
         observer.observe(sidebar, { childList: true, subtree: true });
     }
 
@@ -239,6 +285,7 @@ class PageObserver {
             });
         });
 
+        this.trackObserver(observer);
         observer.observe(document.body, { childList: true, subtree: true });
     }
 }

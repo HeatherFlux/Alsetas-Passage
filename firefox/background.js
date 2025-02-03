@@ -50,6 +50,16 @@ function parseDiceHistory(history, title) {
 
 async function sendToDiscord(message) {
   try {
+    // Check message size (Discord limit is 2000 characters)
+    const messageSize = new TextEncoder().encode(message).length;
+    if (messageSize > 2000) {
+      console.error("Message too large:", {
+        size: messageSize,
+        preview: message.substring(0, 100) + "..."
+      });
+      return `Error: Message size (${messageSize} bytes) exceeds Discord's 2000 character limit`;
+    }
+
     const result = await getStorageData(["webhooks", "activeWebhook"]);
     const webhooks = result.webhooks || [];
     const activeWebhookName = result.activeWebhook;
@@ -77,25 +87,69 @@ async function sendToDiscord(message) {
     });
 
     if (response.ok) {
-      console.log("Message sent to Discord");
+      console.log("Message sent to Discord successfully");
       return "Message sent";
     } else {
-      console.error("Error sending message to Discord:", response.statusText);
-      return "Error";
+      let errorDetails;
+      try {
+        errorDetails = await response.json();
+      } catch {
+        errorDetails = await response.text();
+      }
+
+      console.error("Discord API Error:", {
+        status: response.status,
+        statusText: response.statusText,
+        responseBody: errorDetails,
+        messageSize: new TextEncoder().encode(message).length,
+        messagePreview: message.substring(0, 100) + "..."
+      });
+
+      const errorMessage = errorDetails?.message || errorDetails || response.statusText;
+      return `Error: ${response.status} - ${errorMessage}`;
     }
   } catch (error) {
-    console.error("Error:", error);
-    return "Error";
+    console.error("Error in sendToDiscord:", {
+      error: error.message,
+      stack: error.stack,
+      messageSize: message ? new TextEncoder().encode(message).length : 'N/A',
+      messagePreview: message ? message.substring(0, 100) + "..." : 'N/A',
+      webhookUrl: webhook?.url ? webhook.url.substring(0, webhook.url.indexOf('?')) + '...' : 'N/A'
+    });
+    return `Error: ${error.message}`;
   }
 }
 
 async function handleSendToDiscord(request, sendResponse) {
   try {
     const result = await sendToDiscord(request.message);
-    console.log(result);
-    sendResponse({ status: result === "Message sent" ? "ok" : "error" });
+    console.log("Send to Discord result:", result);
+    if (result.startsWith("Error:")) {
+      sendResponse({
+        status: "error",
+        message: result,
+        details: {
+          messageSize: new TextEncoder().encode(request.message).length,
+          messagePreview: request.message.substring(0, 100) + "..."
+        }
+      });
+    } else {
+      sendResponse({ status: "ok" });
+    }
   } catch (error) {
-    sendResponse({ status: "error", message: error.message });
+    console.error("Handler error:", {
+      error: error.message,
+      stack: error.stack,
+      messageSize: request.message ? new TextEncoder().encode(request.message).length : 'N/A'
+    });
+    sendResponse({
+      status: "error",
+      message: error.message,
+      details: {
+        messageSize: request.message ? new TextEncoder().encode(request.message).length : 'N/A',
+        messagePreview: request.message ? request.message.substring(0, 100) + "..." : 'N/A'
+      }
+    });
   }
 }
 
