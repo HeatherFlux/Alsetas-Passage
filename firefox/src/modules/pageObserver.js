@@ -163,6 +163,7 @@ class PageObserver {
         this.cleanup(); // Clean up any existing observers
         this.observeDiceHistory();
         this.observeSidebar();
+        this.observeStatBlock();
         this.setupMutationObserver();
     }
 
@@ -230,7 +231,15 @@ class PageObserver {
             if (!latestHistory) throw new Error('No History Found');
 
             const diceTitle = characterManager.fetchDiceTitle();
-            const characterName = characterManager.fetchCharacterName() || characterManager.characterName || "Unknown Character";
+            let characterName = characterManager.fetchCharacterName() || characterManager.characterName;
+            
+            // Use the active monster name if we have one
+            if (this.activeMonsterName) {
+                console.log("Using active monster name for roll:", this.activeMonsterName);
+                characterName = this.activeMonsterName;
+            } else {
+                characterName = characterName || "Unknown Character";
+            }
 
             await browser.runtime.sendMessage({
                 action: "logCharacterName",
@@ -260,6 +269,86 @@ class PageObserver {
 
         this.trackObserver(observer);
         observer.observe(sidebar, { childList: true, subtree: true });
+    }
+
+    /**
+     * Observes stat block for changes
+     */
+    observeStatBlock() {
+        console.log("Starting observeStatBlock");
+        const statBlock = document.querySelector('.div-statblock');
+        console.log("Found stat block?", !!statBlock);
+        if (!statBlock) {
+            console.log("Stat block not found, skipping observer setup");
+            return;
+        }
+
+        // Store the current monster name when found
+        let currentMonsterName = '';
+        const subtitle = statBlock.querySelector('.subtitle');
+        console.log("Found subtitle?", !!subtitle, "Content:", subtitle?.textContent);
+        if (subtitle) {
+            currentMonsterName = subtitle.textContent.trim();
+            // Store the name globally for the instance
+            this.currentMonsterName = currentMonsterName;
+            console.log("Initial monster name:", currentMonsterName);
+        }
+
+        // Watch for dice button clicks
+        const diceButtons = statBlock.querySelectorAll('.dice-button');
+        console.log("Initial dice buttons found:", diceButtons.length);
+
+        // Add click listeners to initial buttons
+        diceButtons.forEach(button => {
+            if (!button.hasClickListener) {
+                button.hasClickListener = true;
+                button.addEventListener('click', () => {
+                    console.log("Dice button clicked for monster:", this.currentMonsterName);
+                    // Set this monster as the active roller
+                    this.activeMonsterName = this.currentMonsterName;
+                });
+                console.log("Added click listener to button");
+            }
+        });
+
+        const observer = new MutationObserver((mutations) => {
+            console.log("Stat block changed, processing", mutations.length, "mutations");
+            for (const mutation of mutations) {
+                // Look for new dice buttons
+                const newDiceButtons = statBlock.querySelectorAll('.dice-button:not([data-has-listener])');
+                if (newDiceButtons.length > 0) {
+                    console.log("Found", newDiceButtons.length, "new dice buttons");
+                    newDiceButtons.forEach(button => {
+                        button.dataset.hasListener = 'true';
+                        button.addEventListener('click', () => {
+                            console.log("New dice button clicked for monster:", this.currentMonsterName);
+                            // Set this monster as the active roller
+                            this.activeMonsterName = this.currentMonsterName;
+                        });
+                    });
+                }
+
+                // Update monster name if subtitle changes
+                const newSubtitle = statBlock.querySelector('.subtitle');
+                if (newSubtitle) {
+                    const newName = newSubtitle.textContent.trim();
+                    if (newName !== this.currentMonsterName) {
+                        console.log("Monster name changed from", this.currentMonsterName, "to", newName);
+                        this.currentMonsterName = newName;
+                    }
+                }
+            }
+        });
+
+        console.log("Setting up mutation observer");
+        this.trackObserver(observer);
+        observer.observe(statBlock, { 
+            childList: true, 
+            subtree: true,
+            attributes: true,
+            characterData: true 
+        });
+        console.log("Stat block observer setup complete");
     }
 
     /**
