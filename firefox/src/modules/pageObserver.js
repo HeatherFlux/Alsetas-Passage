@@ -197,7 +197,6 @@ class PageObserver {
             detailDiv.addEventListener("click", (event) => {
                 // Don't stop propagation if the click is on the Discord button
                 if (event.target.closest(".discord-export-button")) {
-                    console.log("Button click detected, allowing propagation");
                     return;
                 }
                 
@@ -213,7 +212,6 @@ class PageObserver {
         container.addEventListener("click", (event) => {
             // Check if the click is within the detail div but not on the button
             if (event.target.closest(".listview-detail") && !event.target.closest(".discord-export-button")) {
-                console.log("Click inside detail div detected, ignoring");
                 return;
             }
             
@@ -225,7 +223,6 @@ class PageObserver {
             
             if (detailDiv) {
                 wasHidden = detailDiv.classList.contains("hidden");
-                console.log("Detail was hidden:", wasHidden);
             }
             
             // After native toggle happens, check if we should add our button

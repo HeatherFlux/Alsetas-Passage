@@ -4,8 +4,17 @@ document.addEventListener('DOMContentLoaded', function () {
   const addWebhookButton = document.getElementById('addWebhook');
 
   function validateInputs() {
-    addWebhookButton.disabled = !webhookNameInput.value || !webhookUrlInput.value;
+    addWebhookButton.disabled = !(webhookNameInput.value && webhookUrlInput.value);
+    if (!addWebhookButton.disabled) {
+      addWebhookButton.style.pointerEvents = 'auto';
+      addWebhookButton.style.cursor = 'pointer';
+    } else {
+      addWebhookButton.style.pointerEvents = 'none';
+      addWebhookButton.style.cursor = 'not-allowed';
+    }
   }
+
+  validateInputs();
 
   webhookNameInput.addEventListener('input', validateInputs);
   webhookUrlInput.addEventListener('input', validateInputs);

@@ -58,6 +58,8 @@ button {
 button:disabled {
     background-color: #a57d5a;
     cursor: not-allowed;
+    opacity: 0.7;
+    pointer-events: none; /* Prevent click events */
 }
 
 button:hover:enabled {

@@ -77,6 +77,7 @@ create_package() {
     cp "$type/content.bundle.js" "$build_dir/"
     cp "$type/popup.html" "$build_dir/"
     cp "$type/popup.css" "$build_dir/"
+    cp "$type/popup.js" "$build_dir/"
     cp "$type/toast.css" "$build_dir/"
     cp -r "$type/icons" "$build_dir/"
     
