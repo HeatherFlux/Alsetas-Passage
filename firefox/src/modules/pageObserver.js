@@ -5,11 +5,15 @@
 import { createExportButton, hasEventListener, registerEventListener, showToast } from '../utils/uiUtils.js';
 import { removeElementsFromHtml, extractAndFormatTraits, convertHtmlToMarkdown } from '../utils/htmlUtils.js';
 import characterManager from './characterManager.js';
+import BUILD_INFO from './buildInfo.js';
 
 class PageObserver {
     constructor() {
         this.observers = new Set();
         this.setupMessageHandling();
+        
+        // Log build info to verify version
+        console.log(`Alseta's Passage initialized - Build: ${BUILD_INFO.buildHash} (${BUILD_INFO.buildDate} ${BUILD_INFO.buildTime})`);
     }
 
     /**
@@ -187,15 +191,53 @@ class PageObserver {
      * @param {HTMLElement} container - The container element
      */
     setupContainerClickListener(container) {
-        container.addEventListener("click", () => {
+        // Capture clicks on the detail div first
+        const detailDiv = container.querySelector(".listview-detail");
+        if (detailDiv) {
+            detailDiv.addEventListener("click", (event) => {
+                // Don't stop propagation if the click is on the Discord button
+                if (event.target.closest(".discord-export-button")) {
+                    console.log("Button click detected, allowing propagation");
+                    return;
+                }
+                
+                // Stop propagation to prevent container's click handler
+                event.stopPropagation();
+                console.log("Detail click stopped from propagating");
+            }, true); // Use capture phase to intercept events early
+        }
+
+        // Store the current state to track if user is opening or closing
+        let wasHidden = true;
+        
+        container.addEventListener("click", (event) => {
+            // Check if the click is within the detail div but not on the button
+            if (event.target.closest(".listview-detail") && !event.target.closest(".discord-export-button")) {
+                console.log("Click inside detail div detected, ignoring");
+                return;
+            }
+            
+            // Capture the current state before the native toggle happens
+            let detailDiv = container.querySelector(".listview-detail");
+            if (detailDiv && detailDiv.innerHTML.trim() === "") {
+                detailDiv = detailDiv.nextElementSibling;
+            }
+            
+            if (detailDiv) {
+                wasHidden = detailDiv.classList.contains("hidden");
+                console.log("Detail was hidden:", wasHidden);
+            }
+            
+            // After native toggle happens, check if we should add our button
             setTimeout(() => {
                 let detailDiv = container.querySelector(".listview-detail");
                 if (detailDiv && detailDiv.innerHTML.trim() === "") {
                     detailDiv = detailDiv.nextElementSibling;
                 }
+                
                 if (detailDiv) {
-                    detailDiv.classList.toggle("hidden");
-                    if (!detailDiv.classList.contains("hidden")) {
+                    // Only add the button if the user was opening the detail (it was hidden before)
+                    if (wasHidden && !detailDiv.classList.contains("hidden")) {
                         this.addDetailExportButton(container);
                     }
                 }

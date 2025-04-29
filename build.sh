@@ -29,6 +29,7 @@ check_command() {
 
 # Check required commands
 check_command "zip"
+check_command "node"
 
 # Function to get version from manifest
 get_version() {
@@ -47,6 +48,17 @@ clean_builds() {
     print_blue "Cleaning previous builds..."
     rm -f alsetas-passage-*.zip alsetas-passage-*.xpi
     rm -rf chrome/build firefox/build
+}
+
+# Update build info with current timestamp and hash
+update_build_info() {
+    local target=$1
+    print_blue "Updating build info for $target..."
+    node updateBuildInfo.js $target
+    if [ $? -ne 0 ]; then
+        print_red "Failed to update build info for $target"
+        exit 1
+    fi
 }
 
 # Function to create extension package
@@ -85,6 +97,21 @@ create_package() {
     rm -rf "$build_dir"
 }
 
+# Function to create source package with code and XPI
+create_source_package() {
+    local firefox_version=$1
+    print_blue "\nCreating Firefox source package..."
+    
+    # Create zip with source code and XPI
+    zip -r "alsetas-passage-firefox-source-v${firefox_version}.zip" firefox "alsetas-passage-firefox-v${firefox_version}.xpi"
+    
+    if [ $? -eq 0 ]; then
+        print_green "✓ Successfully created alsetas-passage-firefox-source-v${firefox_version}.zip"
+    else
+        print_red "Failed to create source package!"
+    fi
+}
+
 # Build Chrome extension
 build_chrome() {
     print_blue "\nBuilding Chrome extension..."
@@ -92,6 +119,9 @@ build_chrome() {
     # Get Chrome version
     chrome_version=$(get_version "chrome/manifest.json")
     print_blue "Chrome version: $chrome_version"
+    
+    # Update build info
+    update_build_info "chrome"
     
     # Bundle with webpack
     npx webpack --config webpack.config.js --env target=chrome
@@ -112,11 +142,17 @@ build_firefox() {
     firefox_version=$(get_version "firefox/manifest.json")
     print_blue "Firefox version: $firefox_version"
     
+    # Update build info
+    update_build_info "firefox"
+    
     # Bundle with webpack
     npx webpack --config webpack.config.js --env target=firefox
     if [ $? -eq 0 ]; then
         print_green "Firefox bundle created successfully!"
         create_package "firefox" "$firefox_version"
+        
+        # Create source package after Firefox build
+        create_source_package "$firefox_version"
     else
         print_red "Firefox webpack build failed!"
         exit 1
