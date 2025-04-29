@@ -1,28 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pathbuilder Discord Bot</title>
     <link rel="stylesheet" type="text/css" href="popup.css">
+    <link rel="stylesheet" type="text/css" href="toast.css">
 </head>
 
 <body>
-    <h1>Pathbuilder Discord Bot</h1>
-    <p><a href="https://discord.gg/jWEEqX8qkc">Bug Reports</a></p>
-    <label for="webhookName">Discord Channel Name:</label>
-    <input type="text" id="webhookName" placeholder="e.g., My Discord Channel" />
-    <label for="webhookUrl">Webhook URL:</label>
-    <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." />
-    <button id="addWebhook" disabled>Add Webhook</button>
-    <p id="addSuccess" class="success-message">Webhook added successfully!</p>
+    <header>
+        <h1>Pathbuilder Discord Bot</h1>
+        <p class="intro-text">Connect Pathbuilder 2E rolls to Discord</p>
+    </header>
+    
+    <main>
+        <div class="compact-form">
+            <h2 id="add-webhook-heading">Add Webhook</h2>
+            <form id="webhook-form">
+                <div class="form-group">
+                    <label for="webhookName">Channel Name:</label>
+                    <input type="text" id="webhookName" placeholder="e.g., My Discord Channel" aria-required="true" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="webhookUrl">Webhook URL:</label>
+                    <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." aria-required="true" />
+                </div>
+                
+                <button id="addWebhook" type="button" disabled aria-disabled="true">Add Webhook</button>
+                <p id="addSuccess" class="success-message" aria-live="polite">Webhook added successfully!</p>
+            </form>
+        </div>
 
-    <h2>Saved Webhooks</h2>
-    <ul id="webhookList"></ul>
+        <div class="two-column">
+            <div class="column">
+                <h2 id="saved-webhooks-heading">Saved Webhooks</h2>
+                <ul id="webhookList" class="webhook-list" aria-live="polite"></ul>
+            </div>
 
-    <h2>Select Active Webhook</h2>
-    <select id="activeWebhook"></select>
-    <button id="saveActiveWebhook">Save Active Webhook</button>
-    <p id="saveSuccess" class="success-message">Active Webhook saved successfully!</p>
+            <div class="column">
+                <h2 id="active-webhook-heading">Active Webhook</h2>
+                <div class="form-group">
+                    <select id="activeWebhook" aria-label="Choose active webhook"></select>
+                    <button id="saveActiveWebhook" type="button">Save</button>
+                    <p id="saveSuccess" class="success-message" aria-live="polite">Saved!</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <a href="https://discord.gg/jWEEqX8qkc" target="_blank" rel="noopener noreferrer">Discord Support</a>
+    </footer>
 
     <script src="popup.js"></script>
 </body>

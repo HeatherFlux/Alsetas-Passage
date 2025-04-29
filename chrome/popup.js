@@ -3,9 +3,19 @@ document.addEventListener("DOMContentLoaded", function () {
   const webhookNameInput = document.getElementById("webhookName");
   const webhookUrlInput = document.getElementById("webhookUrl");
   const addWebhookButton = document.getElementById("addWebhook");
+  const webhookForm = document.getElementById('webhook-form');
 
   function validateInputs() {
     addWebhookButton.disabled = !webhookNameInput.value || !webhookUrlInput.value;
+    if (!addWebhookButton.disabled) {
+      addWebhookButton.style.pointerEvents = 'auto';
+      addWebhookButton.style.cursor = 'pointer';
+      addWebhookButton.setAttribute('aria-disabled', 'false');
+    } else {
+      addWebhookButton.style.pointerEvents = 'none';
+      addWebhookButton.style.cursor = 'not-allowed';
+      addWebhookButton.setAttribute('aria-disabled', 'true');
+    }
   }
 
   webhookNameInput.addEventListener("input", validateInputs);
@@ -27,6 +37,11 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("addSuccess").style.display = "none";
           }, 3000);
           displayWebhooks();
+          
+          // Clear form inputs after successful submission
+          webhookNameInput.value = '';
+          webhookUrlInput.value = '';
+          validateInputs();
         })
         .catch((error) => {
           console.error("Error saving webhooks:", error);
@@ -64,28 +79,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
         webhookList.innerHTML = "";
         activeWebhookSelect.innerHTML = "";
-        webhooks.forEach((webhook, index) => {
-          const li = document.createElement("li");
-          li.textContent = webhook.name;
-          const deleteButton = document.createElement("button");
-          deleteButton.textContent = "Delete";
-          deleteButton.addEventListener("click", function () {
-            webhooks.splice(index, 1);
-            browser.storage.sync
-              .set({ webhooks: webhooks })
-              .then(displayWebhooks);
-          });
-          li.appendChild(deleteButton);
-          webhookList.appendChild(li);
+        
+        if (webhooks.length === 0) {
+          const emptyMessage = document.createElement('li');
+          emptyMessage.textContent = 'No webhooks saved yet';
+          emptyMessage.className = 'empty-message';
+          webhookList.appendChild(emptyMessage);
+          
+          // Add a default option for the select
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = '-- Select a webhook --';
+          activeWebhookSelect.appendChild(defaultOption);
+        } else {
+          webhooks.forEach((webhook, index) => {
+            const li = document.createElement("li");
+            li.textContent = webhook.name;
+            
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.setAttribute('aria-label', `Delete webhook ${webhook.name}`);
+            deleteButton.addEventListener("click", function () {
+              webhooks.splice(index, 1);
+              browser.storage.sync
+                .set({ webhooks: webhooks })
+                .then(displayWebhooks);
+            });
+            
+            li.appendChild(deleteButton);
+            webhookList.appendChild(li);
 
-          const option = document.createElement("option");
-          option.value = webhook.name;
-          option.textContent = webhook.name;
-          if (webhook.name === activeWebhook) {
-            option.selected = true;
-          }
-          activeWebhookSelect.appendChild(option);
-        });
+            const option = document.createElement("option");
+            option.value = webhook.name;
+            option.textContent = webhook.name;
+            if (webhook.name === activeWebhook) {
+              option.selected = true;
+            }
+            activeWebhookSelect.appendChild(option);
+          });
+        }
       })
       .catch((error) => {
         console.error("Error retrieving webhooks:", error);
