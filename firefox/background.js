@@ -13,7 +13,7 @@ function stripHTML(html) {
 }
 
 function removePrefix(history) {
-  return history.replace(/\d{1,2}:\d{2}:\d{2} (AM|PM) Your /, ``);
+  return history.replace(/^\d{1,2}:\d{2}(:\d{2})?\s*(?:AM|PM)?\s*Your\s+/i, ``);
 }
 
 function parseDiceHistory(history, title) {

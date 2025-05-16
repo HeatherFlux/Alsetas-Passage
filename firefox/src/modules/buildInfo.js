@@ -4,9 +4,9 @@
  */
 
 export const BUILD_INFO = {
-    buildHash: 'dfe5f177',
-    buildDate: '2025-04-29',
-    buildTime: '07:49:34'
+    buildHash: '77ec0454',
+    buildDate: '2025-05-16',
+    buildTime: '22:32:52'
 };
 
 export default BUILD_INFO;

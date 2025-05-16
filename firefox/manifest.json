@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Alseta's Passage: A Pathbuilder Discord Bot",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Creates a safe passageway for your rolls from pathbuilder to discord",
   "permissions": ["storage"],
   "background": {
