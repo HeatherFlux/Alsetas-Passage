@@ -4,11 +4,32 @@
 
 /**
  * Removes timestamp prefix from history messages
+ * Handles various locale timestamp formats including:
+ * - US English: "10:45:30 AM Your" or "2:30:45 PM Your"
+ * - Lowercase with periods: "10:45:30 a.m. Your" or "10:45:30 p.m. Your"
+ * - 24-hour format: "14:30:45 Your" or "22:30:45 Your"
+ * - Formats with/without seconds
+ * - Various spacing and case variations
+ * 
  * @param {string} history - The history message
  * @returns {string} History without timestamp prefix
  */
 function removePrefix(history) {
-    return history.replace(/\d{1,2}:\d{2}:\d{2} (AM|PM) Your /, '');
+    // Ultra-comprehensive regex to handle all possible locale timestamp formats
+    // Pattern breakdown:
+    // ^\s* - optional leading whitespace
+    // (?:午前|午後|上午|下午|오전|오후)?\s* - optional Asian AM/PM markers with space
+    // \d{1,2} - 1-2 digits for hour
+    // [:.：·h-_] - various separators (colon, dot, full-width colon, middle dot, h, dash, underscore)
+    // \d{1,2} - 1-2 digits for minutes (allowing single digit)
+    // (?:[:.：·ms-_]\d{1,2}(?:\.\d+)?)?s? - optional seconds with separators, decimals, and optional 's'
+    // \s* - optional space before AM/PM
+    // (?:AM|PM|A\.M\.|P\.M\.|a\.m\.|p\.m\.|am|pm|Am|Pm|aM|pM|AM\.|PM\.|nachm\.)? - AM/PM variations
+    // \s+ - one or more spaces
+    // Your\s+ - "Your" followed by space(s)
+    const timestampRegex = /^\s*(?:午前|午後|上午|下午|오전\s|오후\s)?\s*\d{1,2}[:.：·h\-_]\d{1,2}(?:[:.：·ms\-_]\d{1,2}(?:\.\d+)?)?s?\s*(?:AM|PM|A\.M\.|P\.M\.|a\.m\.|p\.m\.|am|pm|Am|Pm|aM|pM|AM\.|PM\.|nachm\.)?\s+Your\s+/i;
+    
+    return history.replace(timestampRegex, '');
 }
 
 /**

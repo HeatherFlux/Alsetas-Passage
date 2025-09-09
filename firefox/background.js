@@ -12,8 +12,22 @@ function stripHTML(html) {
   return html.replace(/<\/?[^>]+(>|$)/g, " ");
 }
 
+/**
+ * Removes timestamp prefix from history messages
+ * Handles various locale timestamp formats including:
+ * - US English: "10:45:30 AM Your" or "2:30:45 PM Your"
+ * - Lowercase with periods: "10:45:30 a.m. Your" or "10:45:30 p.m. Your"
+ * - 24-hour format: "14:30:45 Your" or "22:30:45 Your"
+ * - Formats with/without seconds
+ * - Various spacing and case variations
+ * 
+ * @param {string} history - The history message
+ * @returns {string} History without timestamp prefix
+ */
 function removePrefix(history) {
-  return history.replace(/^\d{1,2}:\d{2}(:\d{2})?\s*(?:AM|PM)?\s*Your\s+/i, ``);
+  // Ultra-comprehensive regex to handle all possible locale timestamp formats
+  const timestampRegex = /^\s*(?:午前|午後|上午|下午|오전\s|오후\s)?\s*\d{1,2}[:.：·h\-_]\d{1,2}(?:[:.：·ms\-_]\d{1,2}(?:\.\d+)?)?s?\s*(?:AM|PM|A\.M\.|P\.M\.|a\.m\.|p\.m\.|am|pm|Am|Pm|aM|pM|AM\.|PM\.|nachm\.)?\s+Your\s+/i;
+  return history.replace(timestampRegex, '');
 }
 
 function parseDiceHistory(history, title) {
@@ -29,19 +43,14 @@ function parseDiceHistory(history, title) {
     switch (rollType) {
       case 'Critical':
         return `Critical Hit! **${characterName}'s** ${title} caused **${rollValue}** damage.`;
-        break;
       case 'Attack':
         return `**${characterName}'s** ${title} attempts to hit with a **${rollValue}**.`;
-        break;
       case 'Damage':
         return `**${characterName}'s** ${title} caused **${rollValue}** damage.`;
-        break;
       case 'Free':
-        return `**${characterName}** rolls ${match[2]} with a ${match[4]}`
-        break;
+        return `**${characterName}** rolls ${match[2]} with a ${match[4]}`;
       default:
         return `**${characterName}** rolls ${title} for **${match[1]}**.`;
-        break;
     }
   }
 
@@ -113,8 +122,7 @@ async function sendToDiscord(message) {
       error: error.message,
       stack: error.stack,
       messageSize: message ? new TextEncoder().encode(message).length : 'N/A',
-      messagePreview: message ? message.substring(0, 100) + "..." : 'N/A',
-      webhookUrl: webhook?.url ? webhook.url.substring(0, webhook.url.indexOf('?')) + '...' : 'N/A'
+      messagePreview: message ? message.substring(0, 100) + "..." : 'N/A'
     });
     return `Error: ${error.message}`;
   }
