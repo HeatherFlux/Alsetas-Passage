@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alseta's Passage</title>
+  <meta name="manifest.type" content="browser_action" />
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <h1>Alseta's Passage</h1>
+    <p class="intro-text">Connect Pathbuilder 2e rolls to Discord</p>
+  </header>
+
+  <main>
+    <section class="compact-form">
+      <h2>Add Webhook</h2>
+      <form id="webhook-form">
+        <div class="form-group">
+          <label for="webhookName">Channel Name:</label>
+          <input
+            type="text"
+            id="webhookName"
+            placeholder="e.g., My Discord Channel"
+            aria-required="true"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="webhookUrl">Webhook URL:</label>
+          <input
+            type="text"
+            id="webhookUrl"
+            placeholder="https://discord.com/api/webhooks/..."
+            aria-required="true"
+          />
+        </div>
+
+        <button id="addWebhook" type="button" disabled aria-disabled="true">
+          Add Webhook
+        </button>
+        <p id="addSuccess" class="success-message" aria-live="polite">
+          Webhook added successfully!
+        </p>
+      </form>
+    </section>
+
+    <div class="two-column">
+      <section class="column">
+        <h2>Saved Webhooks</h2>
+        <ul id="webhookList" class="webhook-list" aria-live="polite"></ul>
+      </section>
+
+      <section class="column">
+        <h2>Active Webhook</h2>
+        <div class="form-group">
+          <select id="activeWebhook" aria-label="Choose active webhook"></select>
+          <button id="saveActiveWebhook" type="button">Save</button>
+          <p id="saveSuccess" class="success-message" aria-live="polite">Saved!</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <a href="https://discord.gg/jWEEqX8qkc" target="_blank" rel="noopener noreferrer">
+      Discord Support
+    </a>
+  </footer>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

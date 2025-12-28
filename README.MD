@@ -1,155 +1,121 @@
-# Alseta's Passage: A Pathbuilder Discord Bot
+# Alseta's Passage
 
-A browser extension that creates a seamless integration between Pathbuilder2e and Discord, allowing players to easily share their character actions, rolls, and information in Discord channels.
+A browser extension that integrates Pathbuilder2e with Discord, allowing players to share character actions, dice rolls, and information to Discord channels via webhooks.
+
+Built with [WXT](https://wxt.dev/) for unified Chrome/Firefox development.
 
 ## Features
 
 - Adds "Send to Discord" buttons to Pathbuilder2e interface
-- Captures and formats dice rolls and character actions
+- Automatically sends dice rolls to Discord as they happen
 - Supports multiple Discord webhooks
 - Works with both main and beta versions of Pathbuilder
-- Provides visual feedback through toast notifications
-- Maintains character context in messages
-
-## Project Structure
-
-```
-.
-├── build.sh              # Main build script for all extensions
-├── chrome/              # Chrome extension implementation
-│   ├── manifest.json    # Extension manifest
-│   ├── background.js    # Background service worker
-│   ├── content.js       # Content script
-│   ├── build.sh        # Chrome-specific build script
-│   └── src/            # Source code
-│       ├── utils/      # Utility functions
-│       └── modules/    # Feature modules
-├── firefox/            # Firefox extension implementation
-│   ├── manifest.json   # Extension manifest
-│   ├── background.js   # Background script
-│   ├── content.js      # Content script
-│   ├── build.sh       # Firefox-specific build script
-│   └── src/           # Source code
-│       ├── utils/     # Utility functions
-│       └── modules/   # Feature modules
-└── test/              # Test suite
-    ├── fixtures/      # Test HTML fixtures
-    ├── unit/         # Unit tests
-    └── integration/  # Integration tests
-```
+- Visual feedback through toast notifications
 
 ## Development
 
 ### Prerequisites
 
-- Node.js and npm for testing
-- Chrome and Firefox browsers for development
-- Discord webhook URL(s) for testing
-- `zip` command-line utility for building packages
+- Node.js 18+
+- npm or pnpm
 
-### Local Development
+### Setup
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/alsetas-passage.git
-cd alsetas-passage
+# Install dependencies
+npm install
+
+# Run in dev mode (Chrome)
+npm run dev
+
+# Run in dev mode (Firefox)
+npm run dev:firefox
 ```
 
-2. Load the extension in Chrome:
-- Open Chrome and navigate to `chrome://extensions/`
-- Enable "Developer mode"
-- Click "Load unpacked" and select the `chrome` directory
-
-3. Load the extension in Firefox:
-- Open Firefox and navigate to `about:debugging`
-- Click "This Firefox"
-- Click "Load Temporary Add-on" and select any file in the `firefox` directory
-
-### Building Extensions
-
-To build both Chrome and Firefox extensions:
+### Building
 
 ```bash
-./build.sh
-```
+# Build for Chrome
+npm run build
 
-This will:
-- Clean previous builds
-- Build Chrome extension (.zip)
-- Build Firefox extension (.xpi)
-- Place built packages in the root directory
+# Build for Firefox
+npm run build:firefox
 
-To build individual extensions:
+# Build both
+npm run build:all
 
-```bash
-# For Chrome
-cd chrome
-./build.sh
-
-# For Firefox
-cd firefox
-./build.sh
+# Create distribution packages
+npm run zip:all
 ```
 
 ### Testing
 
-The project includes a comprehensive test suite. See [TESTING.md](TESTING.md) for detailed testing documentation and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the testing roadmap.
-
-To run tests:
-
 ```bash
-# Install test dependencies
-npm install
+# Run tests
+npm run test
 
-# Run all tests
-npm test
-
-# Run specific test suites
-npm run test:unit
-npm run test:integration
+# Run tests with coverage
+npm run test:run -- --coverage
 ```
 
-## Browser Store Submissions
+## Project Structure
 
-### Chrome Web Store
-
-1. Build the extension:
-```bash
-./build.sh
+```
+├── entrypoints/           # Extension entry points
+│   ├── background.ts      # Service worker / background script
+│   ├── content.ts         # Content script for Pathbuilder
+│   └── popup/             # Popup UI
+├── modules/               # Feature modules
+│   ├── characterManager.ts
+│   └── pageObserver.ts
+├── utils/                 # Utility functions
+│   ├── discord.ts         # Discord message formatting
+│   ├── html.ts            # HTML manipulation
+│   ├── storage.ts         # Browser storage abstraction
+│   └── ui.ts              # UI components
+├── assets/                # Static assets
+├── public/                # Icons
+└── wxt.config.ts          # WXT configuration
 ```
 
-2. Submit `alsetas-passage-v{version}.zip` to the Chrome Web Store
+## Key Improvements over Previous Version
 
-### Firefox Add-ons
+### No More Timestamp Parsing!
 
-1. Build the extension:
+The previous version tried to parse locale-specific timestamps from Pathbuilder's dice history, requiring 267 lines of tests covering Japanese 午前, Chinese 上午, Korean 오전, German nachm., French h/m/s format, and dozens more variations.
+
+The new approach: **just keep the timestamp**. It varies by locale/machine, but that's fine - it provides useful context in Discord messages without any parsing headaches.
+
+### Unified Codebase
+
+WXT handles all browser differences automatically:
+- Chrome gets Manifest V3 with service workers
+- Firefox gets Manifest V2 with background scripts
+- The `browser` API is normalized across both
+
+## Automated Publishing
+
+GitHub Actions workflow publishes to stores when you push a version tag:
+
 ```bash
-./build.sh
+git tag v2.1.0
+git push origin v2.1.0
 ```
 
-2. Submit `alsetas-passage-firefox-v{version}.xpi` to Firefox Add-ons
+### Required Secrets
 
-## Contributing
+For Chrome Web Store:
+- `CHROME_EXTENSION_ID`
+- `CHROME_CLIENT_ID`
+- `CHROME_CLIENT_SECRET`
+- `CHROME_REFRESH_TOKEN`
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
+For Firefox Add-ons:
+- `FIREFOX_JWT_ISSUER`
+- `FIREFOX_JWT_SECRET`
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+See [WXT submit documentation](https://wxt.dev/guide/publishing.html) for details on obtaining these credentials.
 
 ## License
 
-This project is licensed under the terms of the LICENSE file included in the repository.
-
-## Support
-
-For bug reports and feature requests, please:
-1. Check the existing issues
-2. Join our Discord server: https://discord.gg/jWEEqX8qkc
-3. Create a new issue with detailed information
+MIT

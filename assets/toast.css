@@ -1,0 +1,99 @@
+/* Toast notification styles for content script */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+#alseta-toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alseta-toast {
+  background-color: #36393f;
+  color: #dcddde;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: slideIn 0.3s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  border-left: 4px solid #5865F2;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.alseta-toast.success {
+  border-left-color: #43B581;
+}
+
+.alseta-toast.error {
+  border-left-color: #F04747;
+}
+
+.alseta-toast .close-btn {
+  background: none;
+  border: none;
+  color: #b9bbbe;
+  margin-left: 12px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.alseta-toast .close-btn:hover {
+  opacity: 1;
+  color: white;
+}
+
+/* Discord export button styles */
+.discord-export-button {
+  background-color: #5865F2 !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  margin-top: 10px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  transition: background-color 0.2s !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+.discord-export-button:hover {
+  background-color: #4752C4 !important;
+}
+
+.discord-export-button:active {
+  background-color: #3C45A5 !important;
+}

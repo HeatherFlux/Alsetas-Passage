@@ -1,0 +1,219 @@
+/* Alseta's Passage Popup Styles */
+
+:root {
+  --primary-color: #5865F2;
+  --primary-hover: #4752C4;
+  --success-color: #43B581;
+  --danger-color: #F04747;
+  --background: #36393f;
+  --background-light: #40444b;
+  --text-primary: #dcddde;
+  --text-secondary: #b9bbbe;
+  --border-color: #202225;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  width: 400px;
+  min-height: 300px;
+  padding: 16px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+h1 {
+  font-size: 1.5em;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.intro-text {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+h2 {
+  font-size: 1em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* Form Styles */
+.compact-form {
+  background-color: var(--background-light);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-size: 0.95em;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.form-group input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* Buttons */
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+#addWebhook,
+#saveActiveWebhook {
+  background-color: var(--primary-color);
+  color: white;
+  width: 100%;
+}
+
+#addWebhook:hover:not(:disabled),
+#saveActiveWebhook:hover {
+  background-color: var(--primary-hover);
+}
+
+#addWebhook:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-btn {
+  background-color: transparent;
+  color: var(--danger-color);
+  padding: 4px 8px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+
+.delete-btn:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* Success Messages */
+.success-message {
+  display: none;
+  color: var(--success-color);
+  font-size: 0.85em;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Two Column Layout */
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.column {
+  background-color: var(--background-light);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+/* Webhook List */
+.webhook-list {
+  list-style: none;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.webhook-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background-color: var(--background);
+  border-radius: 4px;
+  margin-bottom: 6px;
+  font-size: 0.9em;
+}
+
+.webhook-list .empty-message {
+  color: var(--text-secondary);
+  font-style: italic;
+  justify-content: center;
+}
+
+/* Footer */
+.footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 0.85em;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+/* Scrollbar */
+.webhook-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.webhook-list::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 3px;
+}
+
+.webhook-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.webhook-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
