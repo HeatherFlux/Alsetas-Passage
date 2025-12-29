@@ -2,7 +2,7 @@
   "name": "alsetas-passage",
   "description": "Share Pathbuilder2e character actions and dice rolls to Discord",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "scripts": {
     "dev": "wxt",

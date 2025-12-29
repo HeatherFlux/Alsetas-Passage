@@ -6,7 +6,7 @@ export default defineConfig({
   manifest: {
     name: "Alseta's Passage",
     description: "Share Pathbuilder2e character actions and dice rolls to Discord",
-    version: "2.1.0",
+    version: "2.1.1",
 
     permissions: [
       "storage"
