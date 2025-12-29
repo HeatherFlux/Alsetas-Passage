@@ -52,6 +52,7 @@ jobs:
   publish-chrome:
     needs: build
     runs-on: ubuntu-latest
+    environment: publish
     if: github.event_name == 'push' || github.event.inputs.publish == 'true'
     steps:
       - name: Checkout repository
@@ -83,6 +84,7 @@ jobs:
   publish-firefox:
     needs: build
     runs-on: ubuntu-latest
+    environment: publish
     if: github.event_name == 'push' || github.event.inputs.publish == 'true'
     steps:
       - name: Checkout repository
