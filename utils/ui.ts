@@ -122,6 +122,7 @@ export function injectCSS(cssPath: string): void {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.type = 'text/css';
-  link.href = browser.runtime.getURL(cssPath);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  link.href = (browser.runtime.getURL as (path: string) => string)(cssPath);
   document.head.appendChild(link);
 }

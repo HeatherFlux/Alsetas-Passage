@@ -22,7 +22,7 @@ const STORAGE_KEYS = {
  */
 export async function getWebhooks(): Promise<Webhook[]> {
   const result = await browser.storage.sync.get(STORAGE_KEYS.WEBHOOKS);
-  return result.webhooks || [];
+  return (result[STORAGE_KEYS.WEBHOOKS] as Webhook[] | undefined) || [];
 }
 
 /**
@@ -30,7 +30,7 @@ export async function getWebhooks(): Promise<Webhook[]> {
  */
 export async function getActiveWebhookName(): Promise<string | null> {
   const result = await browser.storage.sync.get(STORAGE_KEYS.ACTIVE_WEBHOOK);
-  return result.activeWebhook || null;
+  return (result[STORAGE_KEYS.ACTIVE_WEBHOOK] as string | undefined) || null;
 }
 
 /**
@@ -80,7 +80,7 @@ export async function getAllStorageData(): Promise<StorageData> {
     STORAGE_KEYS.ACTIVE_WEBHOOK,
   ]);
   return {
-    webhooks: result.webhooks || [],
-    activeWebhook: result.activeWebhook || '',
+    webhooks: (result[STORAGE_KEYS.WEBHOOKS] as Webhook[] | undefined) || [],
+    activeWebhook: (result[STORAGE_KEYS.ACTIVE_WEBHOOK] as string | undefined) || '',
   };
 }
