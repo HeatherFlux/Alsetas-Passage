@@ -109,11 +109,13 @@ class CharacterManager {
 
   /**
    * Extract full character data from HTML content
+   * Uses DOMParser for safer parsing
    */
   extractCharacterData(htmlContent: string): CharacterData {
     const sanitizedContent = sanitizeHTML(htmlContent);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = sanitizedContent;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitizedContent, 'text/html');
+    const tempDiv = doc.body;
 
     return {
       name: this.extractName(tempDiv),

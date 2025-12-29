@@ -22,8 +22,11 @@ export default defineConfig({
     // Firefox-specific settings (automatically applied for Firefox builds)
     browser_specific_settings: {
       gecko: {
-        id: "alsetas-passage@pathbuilder2e.com",
-        strict_min_version: "109.0"
+        id: "{e7849c1d-9c1d-4592-a557-5b84d428224a}",
+        strict_min_version: "142.0",
+        data_collection_permissions: {
+          required: ["none"]
+        }
       }
     }
   },

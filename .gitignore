@@ -38,3 +38,4 @@ coverage
 .claude/
 CLAUDE.md
 .env.submit*
+output/

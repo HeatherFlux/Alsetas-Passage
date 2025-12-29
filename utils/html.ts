@@ -14,29 +14,23 @@ export function convertHtmlToMarkdown(html: string): string {
 
 /**
  * Sanitize HTML content by removing scripts and event handlers
+ * Uses DOMParser for safer parsing
  */
 export function sanitizeHTML(html: string): string {
-  const div = document.createElement('div');
-  div.innerHTML = html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
 
   // Remove script tags
-  const scripts = div.getElementsByTagName('script');
-  while (scripts[0]) {
-    scripts[0].parentNode?.removeChild(scripts[0]);
-  }
+  doc.querySelectorAll('script').forEach(el => el.remove());
 
   // Remove event attributes
-  const elements = div.getElementsByTagName('*');
-  for (let i = 0; i < elements.length; i++) {
-    const attrs = elements[i].attributes;
-    for (let j = attrs.length - 1; j >= 0; j--) {
-      if (attrs[j].name.startsWith('on')) {
-        elements[i].removeAttribute(attrs[j].name);
-      }
-    }
-  }
+  doc.body.querySelectorAll('*').forEach(el => {
+    Array.from(el.attributes)
+      .filter(attr => attr.name.startsWith('on'))
+      .forEach(attr => el.removeAttribute(attr.name));
+  });
 
-  return div.innerHTML;
+  return doc.body.innerHTML;
 }
 
 /**
@@ -54,23 +48,21 @@ export function formatListViewDetails(details: string): string {
 
 /**
  * Remove specific elements from HTML content
+ * Uses DOMParser for safer parsing
  */
 export function removeElementsFromHtml(html: string, elements: HTMLElement[]): string {
-  const div = document.createElement('div');
-  div.innerHTML = html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
 
   elements.forEach(element => {
     const selector = element.tagName.toLowerCase() +
       Array.from(element.classList)
         .map(c => '.' + c)
         .join('');
-    const match = div.querySelector(selector);
-    if (match) {
-      match.parentNode?.removeChild(match);
-    }
+    doc.body.querySelector(selector)?.remove();
   });
 
-  return div.innerHTML;
+  return doc.body.innerHTML;
 }
 
 export interface TraitExtractionResult {
