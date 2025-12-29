@@ -4,12 +4,41 @@
 
 /**
  * Convert HTML to Discord-compatible markdown
+ * Uses DOMParser to properly extract text content
  */
 export function convertHtmlToMarkdown(html: string): string {
-  return html
-    .replace(/<b>(.*?)<\/b>/g, '**$1**')
-    .replace(/<i>(.*?)<\/i>/g, '*$1*')
-    .replace(/<br\s*\/?>/g, '\n');
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Remove buttons and scripts
+  doc.querySelectorAll('button, script, .discord-export-button').forEach(el => el.remove());
+
+  // Convert bold and italic before stripping tags
+  doc.querySelectorAll('b, strong').forEach(el => {
+    el.replaceWith(`**${el.textContent}**`);
+  });
+  doc.querySelectorAll('i, em').forEach(el => {
+    el.replaceWith(`*${el.textContent}*`);
+  });
+
+  // Convert br to newlines
+  doc.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+
+  // Convert divs to newlines (block elements)
+  doc.querySelectorAll('div').forEach(el => {
+    const text = el.textContent?.trim();
+    if (text) {
+      el.replaceWith('\n' + text);
+    } else {
+      el.remove();
+    }
+  });
+
+  // Get text content and clean up whitespace
+  return (doc.body.textContent || '')
+    .replace(/\n{3,}/g, '\n\n')  // Max 2 newlines
+    .replace(/^\s+|\s+$/g, '')   // Trim
+    .trim();
 }
 
 /**
