@@ -41,13 +41,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: chrome-extension
-          path: .output/*.zip
+          path: .output/*-chrome.zip
 
       - name: Upload Firefox artifact
         uses: actions/upload-artifact@v4
         with:
           name: firefox-extension
-          path: .output/*.xpi
+          path: |
+            .output/*-firefox.zip
+            .output/*-sources.zip
 
   publish-chrome:
     needs: build
@@ -106,7 +108,7 @@ jobs:
           path: .output
 
       - name: Publish to Firefox Add-ons
-        run: npx wxt submit --firefox-zip .output/*.xpi --firefox-sources-zip .output/*-sources.zip
+        run: npx wxt submit --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
         env:
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
@@ -137,7 +139,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./artifacts/chrome/*.zip
-            ./artifacts/firefox/*.xpi
+            ./artifacts/chrome/*-chrome.zip
+            ./artifacts/firefox/*-firefox.zip
           generate_release_notes: true
           draft: false
