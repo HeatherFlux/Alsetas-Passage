@@ -24,10 +24,11 @@ export default defineConfig({
       gecko: {
         id: "{e7849c1d-9c1d-4592-a557-5b84d428224a}",
         strict_min_version: "142.0",
+        // @ts-expect-error - data_collection_permissions is a new Firefox field not in WXT types yet
         data_collection_permissions: {
           required: ["none"]
         }
-      }
+      } as const
     }
   },
 
