@@ -33,3 +33,7 @@ pnpm-debug.log*
 
 # Test coverage
 coverage
+
+# AI files
+.claude/
+CLAUDE.md
