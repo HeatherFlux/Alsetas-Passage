@@ -33,7 +33,11 @@ class PageObserver {
     }
 
     const button = createExportButton();
-    button.addEventListener('click', () => this.handleExportClick(div));
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.handleExportClick(div);
+    });
     detailDiv.appendChild(button);
   }
 
@@ -62,9 +66,15 @@ class PageObserver {
    * Handle export button click
    */
   private async handleExportClick(div: HTMLElement): Promise<void> {
+    console.log("[Alseta] handleExportClick: Button clicked");
     const title = div.querySelector('.listview-title')?.textContent?.trim() || '';
+    console.log("[Alseta] handleExportClick: title =", title);
     const detailDiv = div.querySelector('.listview-detail') as HTMLElement;
-    if (!detailDiv) return;
+    if (!detailDiv) {
+      console.error("[Alseta] handleExportClick: No .listview-detail found in", div);
+      showToast('Could not find content to send');
+      return;
+    }
 
     const { traits, traitDivs } = extractAndFormatTraits(detailDiv);
     const content = convertHtmlToMarkdown(

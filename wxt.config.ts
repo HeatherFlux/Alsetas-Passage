@@ -1,12 +1,22 @@
 import { defineConfig } from 'wxt';
+import crypto from 'node:crypto';
+
+const buildHash = crypto.randomBytes(4).toString('hex');
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
+  // Inject build hash as a global constant
+  vite: () => ({
+    define: {
+      __BUILD_HASH__: JSON.stringify(buildHash),
+    },
+  }),
+
   // Extension manifest configuration
   manifest: {
     name: "Alseta's Passage",
     description: "Share Pathbuilder2e character actions and dice rolls to Discord",
-    version: "2.1.1",
+    version: "2.1.2",
 
     permissions: [
       "storage"

@@ -13,7 +13,7 @@ export default defineContentScript({
   ],
 
   main() {
-    console.log("Alseta's Passage: Content script loaded on Pathbuilder2e");
+    console.log(`Alseta's Passage: Content script loaded [build ${__BUILD_HASH__}]`);
 
     // Inject custom CSS for toast notifications
     injectCSS('assets/toast.css');

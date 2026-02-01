@@ -20,7 +20,7 @@ interface MessageResponse {
 }
 
 export default defineBackground(() => {
-  console.log("Alseta's Passage: Background script loaded");
+  console.log(`Alseta's Passage: Background script loaded [build ${__BUILD_HASH__}]`);
 
   /**
    * Send a message to Discord via webhook
